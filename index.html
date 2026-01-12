@@ -1,0 +1,1061 @@
+<!--
+Version: 7.1.0
+Timestamp: 2026-01-12
+Directory / Filename: over_horizon.html
+Description: 
+    "OVER|HORIZON" Control Panel - v7.1.0.
+    - Revert: Restored original Image-based Preview for Customisation (Canvas removed).
+    - Import: Added support for full file suite: 
+      p2d_play_data, p2d_play_log, p2d_rival_data, p2d_option, p2d_item, 
+      p2d_course_log, p2d_customize_setting, p2d_music_data.
+    - Scores: Updated Score Editor to handle array-based score formats from p2d_music_data.
+    - Architecture: Expanded State to hold logs and raw pdata.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OVER|HORIZON // CONTROL PANEL</title>
+    <style>
+        /* --- THEME VARIABLES --- */
+        :root {
+            --bg-body: #09090b;
+            --bg-sidebar: #0f0f11;
+            --bg-card: #18181b;
+            --bg-hover: #27272a;
+            --border: #3f3f46;
+            --input-bg: #121214;
+            --primary: #6366f1;
+            --primary-hover: #818cf8;
+            --text-main: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --radius: 8px;
+            --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+        }
+
+        body.light {
+            --bg-body: #e4e4e7;
+            --bg-sidebar: #fafafa;
+            --bg-card: #ffffff;
+            --bg-hover: #f4f4f5;
+            --border: #d4d4d8;
+            --input-bg: #ffffff;
+            --text-main: #18181b;
+            --text-muted: #71717a;
+        }
+
+        body.oled {
+            --bg-body: #000000;
+            --bg-sidebar: #000000;
+            --bg-card: #000000;
+            --bg-hover: #1a1a1a;
+            --border: #333333;
+            --input-bg: #000000;
+        }
+
+        /* --- BASE --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+        body { font-family: var(--font-main); background: var(--bg-body); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; }
+        
+        /* --- SIDEBAR --- */
+        aside { width: 280px; background: var(--bg-sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 1.5rem; flex-shrink: 0; z-index: 20; transition: transform 0.3s; }
+        
+        .brand { margin-bottom: 2.5rem; display: flex; align-items: center; gap: 0.75rem; }
+        .logo-svg { width: 32px; height: 32px; filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.4)); }
+        .brand-name { font-weight: 800; font-size: 1.25rem; letter-spacing: -0.03em; line-height: 1; }
+        .brand-sub { font-size: 0.7rem; color: var(--primary); letter-spacing: 0.15em; font-weight: 600; margin-top: 2px; text-transform: uppercase; }
+
+        nav { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; overflow-y: auto; }
+        .nav-item { 
+            padding: 0.75rem 1rem; border-radius: var(--radius); color: var(--text-muted); 
+            cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: all 0.2s; 
+            display: flex; align-items: center; gap: 0.75rem; 
+        }
+        .nav-item:hover { background: var(--bg-hover); color: var(--text-main); }
+        .nav-item.active { background: var(--bg-hover); color: var(--primary); font-weight: 600; border-left: 3px solid var(--primary); }
+
+        .sidebar-footer { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+
+        /* --- MAIN --- */
+        main { flex: 1; padding: 2rem; overflow-y: auto; position: relative; }
+        .view-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .view-title { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+        
+        /* --- COMPONENTS --- */
+        .panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; position: relative; }
+        
+        .grid { display: grid; gap: 1.5rem; }
+        .cols-2 { grid-template-columns: repeat(2, 1fr); }
+        .cols-3 { grid-template-columns: repeat(3, 1fr); }
+        .cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+        label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        
+        input, select, textarea { 
+            width: 100%; background: var(--input-bg); border: 1px solid var(--border); 
+            color: var(--text-main); padding: 0.7rem; border-radius: var(--radius); 
+            font-family: inherit; font-size: 0.9rem; transition: border 0.2s; 
+        }
+        input:focus, select:focus { border-color: var(--primary); }
+        input[readonly] { cursor: default; opacity: 0.7; border-style: dashed; }
+
+        button { 
+            padding: 0.7rem 1.25rem; border-radius: var(--radius); font-weight: 600; font-size: 0.9rem; 
+            cursor: pointer; border: 1px solid transparent; transition: all 0.2s; 
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #818cf8; box-shadow: 0 0 15px rgba(99, 102, 241, 0.3); }
+        .btn-secondary { background: var(--bg-hover); color: var(--text-main); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: var(--border); }
+        .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger); }
+        .btn-danger:hover { background: var(--danger); color: white; }
+        .btn-warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid var(--warning); }
+        .btn-warning:hover { background: var(--warning); color: black; }
+        
+        /* --- CUSTOMIZATION --- */
+        .custom-layout { display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; }
+        .preview-pane { position: sticky; top: 1rem; }
+        .asset-grid { 
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 0.75rem; 
+            max-height: 600px; overflow-y: auto; padding-right: 0.5rem; 
+        }
+        .asset-item { 
+            background: var(--input-bg); border: 1px solid var(--border); border-radius: var(--radius); 
+            padding: 0.5rem; cursor: pointer; transition: 0.2s; position: relative; display: flex; flex-direction: column; align-items: center;
+        }
+        .asset-item:hover { transform: translateY(-3px); border-color: var(--primary); }
+        .asset-item.active { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary); background: rgba(99, 102, 241, 0.1); }
+        .asset-item img { width: 100%; aspect-ratio: 1; object-fit: contain; background: #000; border-radius: 4px; margin-bottom: 0.5rem; }
+        .asset-name { font-size: 0.7rem; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; font-family: var(--font-mono); }
+        .shop-cost { font-size: 0.7rem; color: var(--warning); font-weight: bold; margin-top: 2px; }
+        .shop-owned { font-size: 0.7rem; color: var(--success); font-weight: bold; margin-top: 2px; }
+        
+        /* Removed Canvas CSS, added Image Preview CSS */
+        .preview-image-container {
+            width: 100%; height: auto; min-height: 150px;
+            background: var(--input-bg); border: 1px solid var(--border); border-radius: var(--radius);
+            display: flex; align-items: center; justify-content: center; overflow: hidden;
+            padding: 10px;
+        }
+        .preview-image-container img { max-width: 100%; max-height: 250px; border-radius: 4px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+
+        /* --- SCORES --- */
+        .table-container { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-hover); color: var(--text-muted); font-weight: 600; white-space: nowrap; }
+        tr:hover td { background: var(--bg-hover); }
+        .lamp-pill { padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+
+        /* --- LOG --- */
+        #console-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 32px; background: var(--bg-card); 
+            border-top: 1px solid var(--border); display: flex; align-items: center; padding: 0 1.5rem;
+            font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); z-index: 50;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body class="dark">
+
+    <aside>
+        <div class="brand">
+            <svg class="logo-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <div>
+                <div class="brand-name">OVER|HORIZON</div>
+                <div class="brand-sub">Control Panel</div>
+            </div>
+        </div>
+
+        <nav>
+            <div class="nav-item active" onclick="App.nav('import')">Import</div>
+            <div class="nav-item" onclick="App.nav('profile')">Player Profile</div>
+            <div class="nav-item" onclick="App.nav('custom')">Customisation</div>
+            <div class="nav-item" onclick="App.nav('shop')">Item Shop</div>
+            <div class="nav-item" onclick="App.nav('scores')">Score Editor</div>
+            <div class="nav-item" onclick="App.nav('analytics')">Analytics</div>
+            <div class="nav-item" onclick="App.nav('rivals')">Rivals</div>
+            <div class="nav-item" onclick="App.nav('course')">Course / Class</div>
+            <div class="nav-item" onclick="App.nav('batch')">Batch Tools</div>
+            <div class="nav-item" onclick="App.nav('export')">Share & Export</div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <label>Theme</label>
+            <div class="grid cols-3" style="gap: 5px;">
+                <button class="btn-secondary" style="padding:5px; font-size:0.7rem;" onclick="App.theme('light')">Light</button>
+                <button class="btn-secondary" style="padding:5px; font-size:0.7rem;" onclick="App.theme('dark')">Dark</button>
+                <button class="btn-secondary" style="padding:5px; font-size:0.7rem;" onclick="App.theme('oled')">OLED</button>
+            </div>
+        </div>
+    </aside>
+
+    <main>
+        <!-- VIEW: IMPORT -->
+        <div id="view-import" class="view-section">
+            <div class="view-header">
+                <h1 class="view-title">Import Data</h1>
+            </div>
+            <div class="panel">
+                <div class="drop-zone" id="drop-area" onclick="document.getElementById('file-input').click()">
+                    <div style="font-size: 2rem; margin-bottom: 1rem;">📂</div>
+                    <h3>Drag & Drop JSON Files</h3>
+                    <p style="font-size:0.8rem; margin-top:0.5rem; opacity:0.7;">
+                        <b>Supports:</b><br>p2d_profile.json<br>p2d_play_data.json<br>p2d_play_log.json<br>p2d_item.json<br>p2d_option.json<br>p2d_customize_setting.json<br>p2d_music_data.json<br>p2d_course_log.json<br>p2d_rival_data.json<br>horizon-supplement.json
+                    </p>
+                    <input type="file" id="file-input" multiple hidden accept=".json">
+                </div>
+            </div>
+            <div class="panel">
+                <h3>Session Status</h3>
+                <div class="grid cols-4" id="file-status"></div>
+                <div style="margin-top:1.5rem; display:flex; gap:1rem;">
+                    <button class="btn-secondary" onclick="Data.loadSample()">Load Sample Data</button>
+                    <button class="btn-danger" onclick="Data.clear()">Reset Session</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: PROFILE -->
+        <div id="view-profile" class="view-section" style="display:none;">
+            <div class="view-header">
+                <h1 class="view-title">Player Profile</h1>
+                <div style="display: flex; gap: 1rem;">
+                     <button class="btn-secondary" onclick="Data.exportOne('settings')">Export Resources</button>
+                     <button class="btn-primary" onclick="Data.exportOne('profile')">Export Profile</button>
+                </div>
+            </div>
+            
+            <div class="grid cols-2">
+                <div class="panel">
+                    <h3>Account Info</h3>
+                    <div class="grid">
+                        <div><label>Auth Token (_id)</label><input type="text" id="prof-token" readonly style="font-family:var(--font-mono); font-size:0.8rem;"></div>
+                        <div><label>INFINITAS ID</label><input type="text" id="prof-id" readonly></div>
+                        <div><label>DJ Name</label><input type="text" id="prof-name" onchange="State.updateProfile('djname', this.value)"></div>
+                    </div>
+                    
+                    <h3 style="margin-top: 2rem;">Resources</h3>
+                    <div class="grid cols-2">
+                        <div><label>BITS</label><input type="number" id="prof-bits" onchange="State.updateResources('bit', this.value)"></div>
+                        <div><label>L.DISC</label><input type="number" id="prof-ldisc" onchange="State.updateResources('ldisc', this.value)"></div>
+                        <div><label>Tickets</label><input type="number" id="prof-tickets" onchange="State.updateResources('infinitas_ticket', this.value)"></div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>Game Options (Hidden)</h3>
+                    <div class="grid cols-2">
+                        <div>
+                            <h4 style="margin-bottom:1rem; color:var(--primary);">Single Play (SP)</h4>
+                            <div style="display:flex; flex-direction:column; gap:1rem;">
+                                <div><label>Judge Offset</label><input type="number" id="sp-judge" onchange="State.updateOpt('sp_judge_offset', this.value)"></div>
+                                <div><label>Display Offset</label><input type="number" id="sp-note" onchange="State.updateOpt('sp_note_offset', this.value)"></div>
+                                <div><label>Sudden+</label><input type="number" id="sp-sudden" onchange="State.updateOpt('sp_sudden_plus', this.value)"></div>
+                                <div>
+                                    <label>Timing Type</label>
+                                    <select id="sp-timing" onchange="State.updateOpt('sp_timing_type', this.value)">
+                                        <option value="0">Normal</option><option value="1">Early</option><option value="2">Late</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="border-left:1px solid var(--border); padding-left:1rem;">
+                            <h4 style="margin-bottom:1rem; color:var(--primary);">Double Play (DP)</h4>
+                            <div style="display:flex; flex-direction:column; gap:1rem;">
+                                <div><label>Judge Offset</label><input type="number" id="dp-judge" onchange="State.updateOpt('dp_judge_offset', this.value)"></div>
+                                <div><label>Display Offset</label><input type="number" id="dp-note" onchange="State.updateOpt('dp_note_offset', this.value)"></div>
+                                <div><label>Sudden+</label><input type="number" id="dp-sudden" onchange="State.updateOpt('dp_sudden_plus', this.value)"></div>
+                                <div>
+                                    <label>Timing Type</label>
+                                    <select id="dp-timing" onchange="State.updateOpt('dp_timing_type', this.value)">
+                                        <option value="0">Normal</option><option value="1">Early</option><option value="2">Late</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top:1rem; text-align:right;">
+                         <button class="btn-secondary" onclick="Data.exportOne('options')">Export Options</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: CUSTOMISATION -->
+        <div id="view-custom" class="view-section" style="display:none;">
+            <div class="view-header">
+                <h1 class="view-title">Customisation</h1>
+                <button class="btn-primary" onclick="Data.exportOne('settings')">Export Settings</button>
+            </div>
+            
+            <div class="custom-layout">
+                <!-- Controls -->
+                <div class="panel preview-pane">
+                    <label>Live Preview</label>
+                    <div class="preview-image-container">
+                        <img id="custom-preview-img" src="" alt="Select an item" onerror="this.style.display='none'">
+                    </div>
+                    <small id="custom-preview-name" style="text-align:center; display:block; margin-top:10px; color:var(--text-muted); font-family:var(--font-mono)">None Selected</small>
+                    
+                    <hr style="border:0; border-top:1px solid var(--border); margin:1.5rem 0;">
+
+                    <label>Category</label>
+                    <select id="custom-cat-select" onchange="Custom.render()" style="margin-bottom:1.5rem;"></select>
+                    
+                    <label>Quick Select Item</label>
+                    <select id="custom-item-select" onchange="Custom.equipFromDropdown(this.value)" style="margin-bottom:1.5rem;"></select>
+                </div>
+
+                <!-- Grid -->
+                <div class="panel">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                        <h3>Available Items</h3>
+                        <small id="custom-count" style="color:var(--text-muted)">0 items</small>
+                    </div>
+                    <div id="custom-grid" class="asset-grid"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: SHOP -->
+        <div id="view-shop" class="view-section" style="display:none;">
+            <div class="view-header">
+                <h1 class="view-title">Item Shop</h1>
+                <button class="btn-primary" onclick="Data.exportOne('items')">Export Items</button>
+            </div>
+            <div class="panel">
+                <div style="display:flex; justify-content:space-between; margin-bottom:1rem;">
+                    <div>
+                        <label>Filter</label>
+                        <select id="shop-filter" onchange="Shop.render()">
+                            <option value="all">All Items</option>
+                            <option value="owned">Owned</option>
+                            <option value="unowned">Unowned</option>
+                        </select>
+                    </div>
+                    <div style="text-align:right;">
+                        <label>Balance</label>
+                        <h2 style="color:var(--warning); margin:0;" id="shop-balance">0 BITS</h2>
+                    </div>
+                </div>
+                <div id="shop-grid" class="asset-grid"></div>
+            </div>
+        </div>
+
+        <!-- VIEW: SCORES -->
+        <div id="view-scores" class="view-section" style="display:none;">
+            <div class="view-header">
+                <h1 class="view-title">Score Editor</h1>
+                <button class="btn-primary" onclick="Data.exportOne('scores')">Export Scores</button>
+            </div>
+            <div class="panel">
+                <div style="display:flex; gap:1rem; margin-bottom:1rem;">
+                    <input type="text" id="score-search" placeholder="Search by Song ID or Title..." onkeyup="Scores.render()">
+                    <button class="btn-secondary" onclick="document.getElementById('rival-upload').click()">Compare JSON</button>
+                    <input type="file" id="rival-upload" hidden onchange="Scores.loadRival(this.files[0])">
+                </div>
+                <div class="table-container" style="max-height:650px;">
+                    <table id="score-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Title</th>
+                                <th>Diff</th>
+                                <th>Score (Max)</th>
+                                <th>Lamp</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: ANALYTICS -->
+        <div id="view-analytics" class="view-section" style="display:none;">
+            <div class="view-header">
+                <h1 class="view-title">Analytics</h1>
+            </div>
+            <div class="grid cols-2">
+                <div class="panel">
+                    <h3>Skill Radar (Estimate)</h3>
+                    <div style="width:100%; height:300px; display:flex; justify-content:center; align-items:center;" id="radar-container">
+                        <!-- SVG Injected Here -->
+                    </div>
+                    <p style="font-size:0.7rem; text-align:center; color:var(--text-muted); margin-top:1rem;">Based on performance in Level 10-12 songs.</p>
+                </div>
+                <div class="panel">
+                    <h3>DJ POINT Estimation</h3>
+                    <div style="text-align:center; padding:2rem;">
+                        <h1 style="font-size:3rem; color:var(--primary);" id="calc-djpoint">0</h1>
+                        <label>Total DJ Points</label>
+                        <hr style="border:0; border-top:1px solid var(--border); margin:2rem 0;">
+                        <div class="grid cols-2">
+                            <div>
+                                <h2 id="calc-avg-score">0</h2>
+                                <small>Avg Score (Lvl 12)</small>
+                            </div>
+                            <div>
+                                <h2 id="calc-fc-rate">0%</h2>
+                                <small>FC Rate</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: RIVALS -->
+        <div id="view-rivals" class="view-section" style="display:none;">
+             <div class="view-header">
+                <h1 class="view-title">Rivals</h1>
+                <button class="btn-primary" onclick="Data.exportOne('rivals')">Export Rivals</button>
+            </div>
+            <div class="panel">
+                <div class="grid cols-2">
+                    <div>
+                        <h3>SP Rivals</h3>
+                        <div id="sp-rivals-list" class="grid" style="gap:0.5rem; margin-top:1rem;"></div>
+                    </div>
+                    <div>
+                        <h3>DP Rivals</h3>
+                        <div id="dp-rivals-list" class="grid" style="gap:0.5rem; margin-top:1rem;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: EXPORT -->
+        <div id="view-export" class="view-section" style="display:none;">
+            <div class="view-header">
+                <h1 class="view-title">Share & Export</h1>
+            </div>
+            <div class="panel">
+                <h3>Individual File Exports</h3>
+                <p style="margin-bottom:1.5rem; color:var(--text-muted);">Use these to save specific data collections back to the game format.</p>
+                <div class="grid cols-3">
+                    <button class="btn-secondary" onclick="Data.exportOne('profile')">p2d_profile.json</button>
+                    <button class="btn-secondary" onclick="Data.exportOne('options')">p2d_option.json</button>
+                    <button class="btn-secondary" onclick="Data.exportOne('scores')">p2d_music_data.json</button>
+                    <button class="btn-secondary" onclick="Data.exportOne('items')">p2d_item.json</button>
+                    <button class="btn-secondary" onclick="Data.exportOne('settings')">p2d_customize_setting.json</button>
+                    <button class="btn-secondary" onclick="Data.exportOne('rivals')">p2d_rival_data.json</button>
+                </div>
+            </div>
+            <div class="panel">
+                <h3>Full Backup</h3>
+                <div class="grid cols-2">
+                    <button class="btn-primary" onclick="Data.exportAll()">Download Combined Backup</button>
+                    <button class="btn-warning" onclick="Data.copyB64()">Copy Base64 String</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: BATCH -->
+        <div id="view-batch" class="view-section" style="display:none;">
+            <div class="view-header">
+                <h1 class="view-title">Batch Tools</h1>
+            </div>
+            <div class="panel">
+                <div class="grid cols-3">
+                    <button class="btn-warning" onclick="Batch.unlockAll()">Unlock All Shop Items</button>
+                    <button class="btn-warning" onclick="Batch.convertFail()">Convert FAILED > CLEAR</button>
+                    <button class="btn-primary" onclick="Batch.maxBits()">Max Resources</button>
+                    <button class="btn-secondary" onclick="Batch.fixMetadata()">Fix Song Metadata</button>
+                    <button class="btn-danger" onclick="Batch.resetScores()">Reset ALL Scores</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="view-course" class="view-section" style="display:none;"><div class="panel">Course Editor - WIP</div></div>
+    </main>
+
+    <!-- CONSOLE BAR -->
+    <div id="console-bar">
+        <div class="log-status">
+            <div class="log-indicator" id="status-dot"></div>
+            <span id="status-text">Ready</span>
+        </div>
+        <div id="last-log"></div>
+    </div>
+
+    <script>
+        // --- EMBEDDED ITEM DATABASE ---
+        const RAW_DB = {
+            "C10": { "000": "DEFAULT", "001": "ALL DISP", "002": "NO DISP" },
+            "C11": { "000": "100%", "001": "70%", "002": "80%", "003": "90%", "004": "110%", "005": "120%", "006": "130%" },
+            "C12": { "000": "OFF", "001": "ON" },
+            "C13": { "000": "DEFAULT", "001": "Thin", "002": "Thinnner", "003": "Thick" },
+            "C14": { "000": "DEFAULT", "001": "Short", "002": "Shorter", "003": "Long" },
+            "I11": { "000": "DEFAULT", "001": "初代 (first gen)", "002": "9th Style", "003": "IIDX RED", "004": "HAPPY SKY", "005": "DistorteD", "006": "GOLD", "007": "DJ TROOPERS", "008": "EMPRESS", "009": "SIRIUS", "010": "Resort Anthem", "011": "Lincle", "012": "tricoro", "013": "SPADA", "014": "オンリーワンボム (ONLY ONE BOMB)", "015": "PENDUAL", "016": "copula", "017": "SINOBUZ", "018": "キャノンスパーク (CANNON SPARK)", "019": "Rootage", "020": "HEROIC VERSE", "021": "BISTROVERボム (BISTROVER BOMB)", "022": "いいねフラッシュ (Like Flash)", "023": "RESIDENT" },
+            "I12": { "000": "DEFAULT", "001": "トラン (TRAN)", "002": "JOJO", "003": "デルタ (DELTA)", "004": "オレンジディスク (ORANGE DISC)", "005": "DistorteD", "006": "GOLD", "007": "DJ TROOPERS", "008": "EMPRESS", "009": "SIRIUS", "010": "Resort Anthem", "011": "Lincle", "012": "tricoro", "013": "SPADA", "014": "灼熱 (shakunetsu)", "015": "オンリーワンレコード (ONLY ONE REECORD)", "016": "PENDUAL", "017": "copula", "018": "SINOBUZ", "019": "キャノンボーラーズ (CANNON BALLERS)", "020": "Rootage", "021": "HEROIC VERSE" },
+            "I13": { "000": "DEFAULT", "001": "sigsig", "002": "内部フレーム", "003": "空", "004": "KAMAITACHI", "005": "タオル", "006": "コスモス", "007": "度胸兄弟", "008": "Blind Justice", "009": "迷彩", "010": "bloomin feeling", "011": "Marie Antoinette", "012": "Elisha", "013": "Kung-fu Empire", "014": "Tune of beat#3", "015": "EMPRESS", "016": "Programmed World", "017": "3y3s", "018": "UMEGIRI", "019": "KANZAKI", "020": "Rock Da House", "021": "THE DOOR INTO RAINBOW", "022": "Aegis", "023": "Vermillion", "024": "Phoenix", "025": "Lucky Days", "026": "Almace", "027": "DIAMOND CROSSING", "028": "Mamonis", "029": "Ashemu", "030": "Bulluvegola", "031": "Beridzebeth", "032": "Levaslater", "033": "STN", "034": "Rche", "035": "Neulakyussra", "036": "Cybele", "037": "Cuvelia", "038": "Liberation", "039": "Praludium", "040": "少女アリスと箱庭幻想コンチェルト", "041": "ReGENERATION", "042": "20 system bg", "043": "旋律のドグマ～Miserables～/TYPE A", "044": "旋律のドグマ～Miserables～/TYPE B", "045": "Elektrick U-Phoria", "046": "MAGIC & LOVE", "047": "スパーダレリーフ", "048": "S!ck", "049": "CONCEPTUAL", "050": "ΕΛΠΙΣ", "051": "rumrum triplets", "052": "SYNC-ANTHEM", "053": "Thor's Hammer", "054": "Plan 8", "055": "仮想空間の旅人たち", "056": "8bit Princess", "057": "planarian", "058": "Dynamite", "059": "龍と少女とデコヒーレンス", "060": "トリカゴノ鳳凰", "061": "Proof of the existence", "062": "BRAVE GLOW/機動怪獣リングール", "063": "BRAVE GLOW/トリコロイダー", "064": "VEGA/VEGAうさぎ", "065": "VEGA/中のひと", "066": "カジノファイヤーことみちゃん", "067": "New Lights", "068": "灼熱くんやきそば", "069": "即席！脳直★ミュージックシステム", "070": "キャトられ恋はモ～モク", "071": "オンリーワンカバー", "072": "ジザル", "073": "ジャックティーロ", "074": "ジャックハンス", "075": "イェンス", "076": "アムドゥシアン", "077": "マクスウェリオン", "078": "ラプラシア", "079": "ルシェ", "080": "スモモ", "081": "ファウラ", "082": "ベリゼベス", "083": "エルピス・キラ", "084": "フェリーラ", "085": "オールパトナ", "086": "あいむちゃん", "087": "人魚のPrim", "088": "アヤカシ二人", "089": "SHELTER OF THE MIND", "090": "Acid Pumper", "091": "X", "092": "ハーティー", "093": "Nightmare before oversleep", "094": "Highcharge Divolt", "095": "Godspeed（少年）", "096": "車掌イージス", "097": "GENERATE", "098": "Dynamite", "099": "格闘乙女", "100": "レル DX2300系", "101": "つゆ太", "102": "La dolce primavera", "103": "AO-1", "104": "真 地獄超特急 -HELL or HELL-", "105": "モード", "106": "ミニョンヌ鉄道兄弟", "107": "冬椿", "108": "PAPAYAPA BASS", "109": "鴉", "110": "AsiaN distractive", "111": "TOGAKUSHI", "112": "Modular Technology", "113": "獅子霞麗ノ舞", "114": "Music is The Answer", "115": "!Viva!", "116": "SINOBUZ UI", "117": "ChaserXX", "118": "Amor De Verao", "119": "エディブルフラワーの独白", "120": "ハイ*ビスカス ft. Kanae Asaba", "121": "Midnight Lady", "122": "FUTURE is Dead", "123": "Break Stasis", "124": "草原の王女-軌跡を辿って-", "125": "25UI", "126": "焔極OVERKILL", "127": "Breakin' Chain", "128": "津軽雪", "129": "Exhaust Hype", "130": "Yellow Sketch(RX-Ver.S.P.L.)", "131": "Steel Edge", "132": "Go Ahead!!", "133": "Sky High", "134": "イザナミノナゲキ", "135": "GuNGNiR", "136": "ディッシュウォッシャー◎彡おいわちゃん", "137": "BroGamer", "138": "FUZIN RIZIN", "139": "Mare Nectaris", "140": "Quakes", "141": "Rave Cannon", "142": "ECHIDNA", "143": "Snakey Kung-fu", "144": "刃図羅", "145": "忍恋花", "146": "法具「バズラ」", "147": "HADES", "148": "DEATH†ZIGOQ", "149": "東京神話", "150": "Initiation", "151": "EMERALDAS", "152": "Chemical Cookie", "153": "ナイトシティー・アヴァンチュール", "154": "シムルグの目醒め", "155": "n'pa pa BBQ", "156": "ANCHOR", "157": "IIDX AIR RACE", "158": "THE DAY OF JUBILATIONS", "159": "HEISEI", "160": "IDC feat.REVERBEE (Mo'Cuts Ver)", "161": "Yum Yum Jelly", "162": "夏の匂い。キミの残像。 ft. Kanae Asaba", "163": "Hurry Hurry", "164": "OVERTIME", "165": "ミストレス・アンに花束を", "166": "Ember Lights", "167": "Rootage", "168": "Urban Constellations", "169": "金野火織の金色提言", "170": "龍王の霊廟(Mausoleum Of The Primal Dragon)", "171": "Painful Fate", "172": "Drastic Dramatic", "173": "抱きしめてモナムール", "174": "Trill auf G", "175": "Lethal Weapon", "176": "HEROIC VERSE", "177": "Primitive Vibes", "178": "Calvados Queen", "179": "Ska-sh All Neurons!!", "180": "Moving on", "181": "Hyper Drive feat. ぷにぷに電機", "182": "THE BRAVE MUST DIE", "183": "曼荼羅恋々", "184": "Silly Love", "185": "Change Yourself", "186": "Virus Funk" },
+            "I14": { "000": "DEFAULT", "001": "デジタル (DIGITAL)", "002": "スマート (smart)", "003": "メタリックブルー (metallic blue)", "004": "テクノ (techno)ワイヤー (wire)", "005": "ワイヤー (wire)", "006": "ABYSS", "007": "SPADA", "008": "ANCIENT", "009": "オンリーワンジャッジ (only one judge)", "010": "電光掲示板風 (dot matrix)", "011": "SINOBUZ", "012": "セグメント (segment)", "013": "Rootage", "014": "HEROIC VERSE", "015": "BISTROVER JUDGE", "016": "CastHour", "017": "RESIDENT" },
+            "I15": { "000": "DEFAULT", "001": "細いノーツ (Thin)", "002": "極細ノーツ (Thinner)", "003": "ゴージャス (Gorgeous)", "004": "アクア (Aqua)", "005": "ギャル (Gyaru)", "006": "フォトン (Photon)", "007": "パステル (Pastel)", "008": "シンプルカラー (Simple color)", "009": "ライト (Light)", "010": "tricoro", "011": "バブル (Bubble)" },
+            "I16": { "000": "DEFAULT", "001": "IIDX RED", "002": "HAPPY SKY", "003": "DistorteD", "004": "GOLD", "005": "DJ TROOPERS", "006": "EMPRESS", "007": "SIRIUS", "008": "Resort Anthem", "009": "Lincle", "010": "tricoro", "011": "SPADA", "012": "オンリーワンフルコンボ (only one full combo)", "013": "PENDUAL", "014": "copula", "015": "SINOBUZ", "016": "キャノンフィニッシュ (cannon finish)", "017": "Rootage", "018": "HEROIC VERSE" },
+            "I17": { "000": "DEFAULT", "001": "ショート (short)", "002": "ロング (long)", "003": "オレンジ (orange)", "004": "ピンク (pink)", "005": "モノクロ (monochrome)", "006": "ベリーショート (very short)", "007": "ライトニング (lightning)", "008": "オンリーワンビーム (only one beam)", "009": "コピュライト (copula-light)", "010": "CBビーム (CB Beam)", "011": "HEROIC VERSE", "012": "BISTROVER BURNER", "013": "フレネルビーム (Fresnel beam)", "014": "RESIDENT" },
+            "I19": { "000": "DEFAULT", "001": "SIRIUS", "002": "Resort Anthem", "003": "Lincle", "004": "tricoro", "005": "SPADA", "006": "PENDUAL (PRESENT)", "007": "PENDUAL (FUTURE)", "008": "copula", "009": "SINOBUZ", "010": "CANNON BALLERS", "011": "IIDXRED", "012": "HAPPY SKY", "013": "DistorteD", "014": "GOLD", "015": "DJ TROOPERS", "016": "EMPRESS", "017": "Rootage", "018": "7th style", "019": "8th style", "020": "9th style", "021": "10th style", "022": "HEORIC VERSE", "023": "BISTROVER", "024": "CastHour", "025": "RESIDENT" },
+            "I21": { "000": "DEFAULT", "001": "PREMIUM 1", "002": "PREMIUM 2", "003": "PREMIUM 3", "9999": "ALL BACKGROUNDS" }
+        };
+
+        // --- CONSTANTS ---
+        const CONFIG = {
+            userId: "TOKEN", 
+            categories: [
+                { id: "01", type: "C", prefix: "C10", name: "Display Starting Notes", count: 3 },
+                { id: "02", type: "C", prefix: "C11", name: "Explosion Size", count: 7 },
+                { id: "03", type: "C", prefix: "C12", name: "HCN Colour", count: 2 },
+                { id: "04", type: "C", prefix: "C13", name: "Note Thickness", count: 4 },
+                { id: "05", type: "C", prefix: "C14", name: "Key Beam Length", count: 4 },
+                { id: "02", type: "I", prefix: "I11", name: "Note Explosion", count: 24 },
+                { id: "03", type: "I", prefix: "I12", name: "Turntable", count: 22 },
+                { id: "04", type: "I", prefix: "I13", name: "Lane Cover", count: 187 },
+                { id: "05", type: "I", prefix: "I14", name: "Judgement Font", count: 18 },
+                { id: "06", type: "I", prefix: "I15", name: "Note Skin", count: 12 },
+                { id: "07", type: "I", prefix: "I16", name: "Full Combo Effect", count: 19 },
+                { id: "08", type: "I", prefix: "I17", name: "Key Beam", count: 15 },
+                { id: "10", type: "I", prefix: "I19", name: "Song Select BGM", count: 26 },
+                { id: "11", type: "I", prefix: "I13", name: "Graph Area", count: 187 }, 
+                { id: "12", type: "I", prefix: "I21", name: "Result Background", count: 4 }
+            ]
+        };
+
+        // --- STATE ---
+        const State = {
+            profile: { _id: CONFIG.userId, djname: "JOYCIE", bit: 0 },
+            resources: { bit: 0, ldisc: 0, infinitas_ticket: 0}, 
+            options: { sp_judge_offset: 0, sp_note_offset: 0, sp_sudden_plus: 250, sp_timing_type: 0, dp_judge_offset: 0, dp_note_offset: 0, dp_sudden_plus: 250, dp_timing_type: 0 },
+            scores: [],
+            items: {}, 
+            settings: { customize: [], items_count: {} },
+            rivals: { sp_rivals: [], dp_rivals: [] },
+            supplement: { songs: {} },
+            pdata: null,
+            playLog: null,
+            courseLog: null
+        };
+
+        // --- CORE ---
+        const App = {
+            nav: (id) => {
+                document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
+                document.getElementById(`view-${id}`).style.display = 'block';
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                
+                const navs = document.querySelectorAll('.nav-item');
+                const views = ['import','profile','custom','shop','scores','analytics','rivals','course','batch','export'];
+                const idx = views.indexOf(id);
+                if(idx > -1) navs[idx].classList.add('active');
+
+                if(id === 'profile') Profile.render();
+                if(id === 'custom') Custom.init();
+                if(id === 'scores') Scores.render();
+                if(id === 'shop') Shop.render();
+                if(id === 'rivals') Rivals.render();
+                if(id === 'analytics') Analytics.render();
+            },
+            theme: (t) => document.body.className = t,
+            log: (msg) => {
+                console.log(`[SYS] ${msg}`);
+                document.getElementById('last-log').innerText = msg;
+            }
+        };
+
+        // --- DATA ---
+        const Data = {
+            handleFiles: (files) => {
+                if(!files || files.length === 0) return;
+                Array.from(files).forEach(f => {
+                    const r = new FileReader();
+                    r.onload = (e) => {
+                        try {
+                            const json = JSON.parse(e.target.result);
+                            Data.route(json, f.name);
+                        } catch(err) { App.log(`Error parsing ${f.name}`); }
+                    };
+                    r.readAsText(f);
+                });
+            },
+            route: (json, name) => {
+                if(name.includes('supplement')) { State.supplement = json; App.log("Metadata Loaded"); }
+                else if(name.includes('profile')) { State.profile = json; if(json.game_options) State.options = json.game_options; App.log("Profile Loaded"); }
+                else if(name.includes('music_data')) { State.scores = Array.isArray(json) ? json : json.scores||[]; App.log("Scores (Music Data) Loaded"); }
+                else if(name.includes('play_data')) { State.pdata = json; App.log("Play Data (PData) Loaded"); }
+                else if(name.includes('play_log')) { State.playLog = json; App.log("Play Log Loaded"); }
+                else if(name.includes('course_log')) { State.courseLog = json; App.log("Course Log Loaded"); }
+                else if(name.includes('item')) { 
+                    if(json.items) json.items.forEach(i => State.items[i.item_id] = i.count);
+                    App.log("Inventory Loaded");
+                }
+                else if(name.includes('customize')) { 
+                    State.settings = json; 
+                    if(json.items_count) State.resources = json.items_count;
+                    App.log("Settings Loaded"); 
+                }
+                else if(name.includes('option')) { State.options = json; App.log("Options Loaded"); }
+                else if(name.includes('rival')) { State.rivals = json; App.log("Rivals Loaded"); }
+                Data.updateStatus();
+            },
+            updateStatus: () => {
+                const s = document.getElementById('file-status');
+                s.innerHTML = `
+                    <div style="color:${State.profile.djname ? 'var(--success)':'var(--text-muted)'}">Profile</div>
+                    <div style="color:${State.scores.length ? 'var(--success)':'var(--text-muted)'}">Scores (${State.scores.length})</div>
+                    <div style="color:${Object.keys(State.supplement.songs).length ? 'var(--success)':'var(--text-muted)'}">Supplement</div>
+                    <div style="color:${State.settings.customize ? 'var(--success)':'var(--text-muted)'}">Settings</div>
+                `;
+            },
+            loadSample: () => {
+                State.profile = { _id: CONFIG.userId, djname: "SAMPLE_USER", bit: 50000, infinitas_id: "C-1234-5678" };
+                State.resources = { bit: 50000, ldisc: 100, infinitas_ticket: 25};
+                State.scores = [
+                    { music_id: 1000, score: [0,0,2500,0,0], clear_type: 4, difficulty: 2 },
+                    { music_id: 1001, score: [0,0,0,0,0], clear_type: 0, difficulty: 2 }
+                ];
+                State.supplement = { songs: { "1000": { title: "Sample Song A", artist: "Artist A" }, "1001": { title: "Sample Song B", artist: "Artist B" } } };
+                State.items = { "I1100001": 1, "I1500000": 1, "I1300000": 1 };
+                App.log("Sample Data Loaded");
+                Data.updateStatus();
+                App.nav('profile');
+            },
+            clear: () => location.reload(),
+            exportOne: (type) => {
+                let d = null, n = "";
+                if(type === 'profile') { d = State.profile; n = "p2d_profile.json"; }
+                if(type === 'options') { d = { _id: State.profile._id, ...State.options }; n = "p2d_option.json"; }
+                if(type === 'scores') { d = State.scores; n = "p2d_music_data.json"; }
+                if(type === 'settings') { 
+                    d = State.settings; 
+                    d.items_count = State.resources;
+                    n = "p2d_customize_setting.json"; 
+                }
+                if(type === 'rivals') { d = State.rivals; n = "p2d_rival_data.json"; }
+                if(type === 'items') { 
+                    d = { _id: State.profile._id, items: Object.keys(State.items).map(k=>({item_id:k, count:State.items[k]})) };
+                    n = "p2d_item.json"; 
+                }
+                if(d) Data.download(n, d);
+            },
+            exportAll: () => {
+                const all = { profile: State.profile, options: State.options, scores: State.scores, items: State.items, settings: State.settings, rivals: State.rivals };
+                Data.download('horizon_backup.json', all);
+            },
+            download: (name, obj) => {
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(new Blob([JSON.stringify(obj, null, 2)], {type:'application/json'}));
+                a.download = name;
+                a.click();
+            },
+            copyB64: () => {
+                const b = btoa(JSON.stringify({ profile: State.profile, items: State.items }));
+                navigator.clipboard.writeText(b);
+                alert("Copied to Clipboard");
+            }
+        };
+
+        // --- PROFILE LOGIC ---
+        State.updateProfile = (k, v) => { if(State.profile) State.profile[k] = isNaN(v) ? v : Number(v); };
+        State.updateResources = (k, v) => { State.resources[k] = parseInt(v); };
+        State.updateOpt = (k, v) => { State.options[k] = Number(v); };
+        const Profile = {
+            render: () => {
+                const p = State.profile;
+                const r = State.resources;
+                const o = State.options;
+                
+                document.getElementById('prof-token').value = p._id || CONFIG.userId;
+                document.getElementById('prof-id').value = p.infinitas_id || "";
+                document.getElementById('prof-name').value = p.djname || "";
+                
+                document.getElementById('prof-bits').value = r.bit || 0;
+                document.getElementById('prof-ldisc').value = r.ldisc || 0;
+                document.getElementById('prof-tickets').value = r.infinitas_ticket || 0;
+                
+                ['sp_judge_offset','sp_note_offset','sp_sudden_plus','sp_timing_type',
+                 'dp_judge_offset','dp_note_offset','dp_sudden_plus','dp_timing_type'].forEach(k => {
+                     const el = document.getElementById(k.replace('_offset','').replace('_plus','').replace('_type','').replace('_','-'));
+                     if(el) el.value = o[k] || 0;
+                 });
+            }
+        };
+
+        // --- CUSTOMISATION LOGIC ---
+        const Custom = {
+            init: () => {
+                const sel = document.getElementById('custom-cat-select');
+                if(sel.options.length === 0) {
+                    CONFIG.categories.forEach((c, i) => {
+                        const opt = document.createElement('option');
+                        opt.value = i;
+                        opt.text = c.name;
+                        sel.add(opt);
+                    });
+                    Custom.render();
+                }
+            },
+            render: () => {
+                const idx = document.getElementById('custom-cat-select').value;
+                const cat = CONFIG.categories[idx];
+                const grid = document.getElementById('custom-grid');
+                const drop = document.getElementById('custom-item-select');
+                grid.innerHTML = ""; drop.innerHTML = "";
+                
+                const currentEquip = State.settings.customize?.find(x => x.item_category == parseInt(cat.id))?.item_id;
+                const dbCat = RAW_DB[cat.prefix];
+
+                if(dbCat) {
+                    const keys = Object.keys(dbCat).sort();
+                    document.getElementById('custom-count').innerText = `${keys.length} items`;
+                    
+                    keys.forEach(suffix => {
+                        const padSuffix = suffix.padStart(5, '0');
+                        let id = `${cat.prefix}${padSuffix}`;
+                        if(cat.prefix === 'I21' && suffix === '9999') id = 'I2199999';
+                        const name = dbCat[suffix];
+                        const img = `./public/images/${id}.png`;
+                        
+                        // Grid
+                        const el = document.createElement('div');
+                        el.className = `asset-item ${currentEquip === id ? 'active' : ''}`;
+                        el.innerHTML = `<img src="${img}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxIDEiPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMzMzMiLz48L3N2Zz4='"><div class="asset-name">${name}</div>`;
+                        el.onclick = () => { Custom.equip(cat.id, id); };
+                        grid.appendChild(el);
+
+                        // Dropdown
+                        const opt = document.createElement('option');
+                        opt.value = id; opt.text = name;
+                        if(currentEquip === id) opt.selected = true;
+                        drop.add(opt);
+                    });
+                } else {
+                    document.getElementById('custom-count').innerText = "0 items";
+                }
+                
+                // Update Simple Preview
+                if(currentEquip) {
+                    document.getElementById('custom-preview-img').src = `./public/images/${currentEquip}.png`;
+                    document.getElementById('custom-preview-img').style.display = 'block';
+                    
+                    let equipName = currentEquip;
+                    // Try to find name in DB
+                    if(dbCat) {
+                       // Reverse lookup roughly
+                       const sfx = currentEquip.replace(cat.prefix, '').replace(/^0+/, '') || '000';
+                       // Because suffix map keys like '001', '010', we need exact match logic or iteration
+                       // Using the dropdown text is easier since we just populated it
+                       if(drop.selectedOptions[0]) equipName = drop.selectedOptions[0].text;
+                    }
+                    document.getElementById('custom-preview-name').innerText = equipName;
+                }
+            },
+            equip: (catId, itemId) => {
+                if(!State.settings.customize) State.settings.customize = [];
+                State.settings.customize = State.settings.customize.filter(x => x.item_category != parseInt(catId));
+                State.settings.customize.push({ item_category: parseInt(catId), item_id: itemId });
+                Custom.render();
+            },
+            equipFromDropdown: (val) => {
+                const idx = document.getElementById('custom-cat-select').value;
+                Custom.equip(CONFIG.categories[idx].id, val);
+            }
+        };
+
+        // --- SHOP LOGIC ---
+        const Shop = {
+            render: () => {
+                const grid = document.getElementById('shop-grid');
+                grid.innerHTML = "";
+                const bal = State.resources.bit || 0;
+                document.getElementById('shop-balance').innerText = `${bal.toLocaleString()} BITS`;
+                const filter = document.getElementById('shop-filter').value;
+
+                CONFIG.categories.forEach(cat => {
+                    if(cat.type !== 'I') return;
+                    const dbCat = RAW_DB[cat.prefix];
+                    if(!dbCat) return;
+
+                    Object.keys(dbCat).sort().forEach(suffix => {
+                        const padSuffix = suffix.padStart(5, '0');
+                        let id = `${cat.prefix}${padSuffix}`;
+                        if(cat.prefix === 'I21' && suffix === '9999') id = 'I2199999';
+                        const name = dbCat[suffix];
+                        const owned = !!State.items[id];
+
+                        if(filter === 'owned' && !owned) return;
+                        if(filter === 'unowned' && owned) return;
+
+                        let cost = (suffix === '000' || suffix === '00000') ? 0 : 1000;
+                        if(id === 'I2199999') cost = 9999;
+
+                        const el = document.createElement('div');
+                        el.className = `asset-item ${owned ? 'active' : ''}`;
+                        el.innerHTML = `
+                            <img src="./public/images/${id}.png" onerror="this.style.opacity=0.3">
+                            <div class="asset-name">${name}</div>
+                            <div class="${owned ? 'shop-owned' : 'shop-cost'}">${owned ? 'OWNED' : cost + ' BITS'}</div>
+                        `;
+                        if(!owned && cost > 0) el.onclick = () => Shop.buy(id, cost);
+                        grid.appendChild(el);
+                    });
+                });
+            },
+            buy: (id, cost) => {
+                if(State.resources.bit >= cost) {
+                    State.resources.bit -= cost;
+                    State.items[id] = 1;
+                    Shop.render();
+                    App.log(`Bought ${id}`);
+                } else {
+                    alert("Not enough BITS");
+                }
+            }
+        };
+
+        // --- SCORES LOGIC ---
+        const Scores = {
+            render: () => {
+                const tbody = document.querySelector('#score-table tbody');
+                tbody.innerHTML = "";
+                const search = document.getElementById('score-search').value.toLowerCase();
+                
+                State.scores.slice(0, 100).forEach(s => {
+                    let mid = s.music_id; 
+                    if(typeof mid === 'object') mid = mid.$numberInt;
+                    
+                    const meta = State.supplement.songs[mid] || { title: `Song ${mid}`, artist: "Unknown" };
+                    if(search && !meta.title.toLowerCase().includes(search) && !mid.toString().includes(search)) return;
+
+                    const row = document.createElement('tr');
+                    
+                    // Handle Array Scores
+                    // p2d_music_data: score: [0,0,649,0,0] -> display max
+                    let scoreVal = 0;
+                    if(Array.isArray(s.score)) {
+                         scoreVal = Math.max(...s.score.map(v => parseInt(v.$numberInt || v || 0)));
+                    } else if(typeof s.score === 'object') {
+                         scoreVal = parseInt(s.score.$numberInt || 0);
+                    } else {
+                         scoreVal = parseInt(s.score || 0);
+                    }
+                    
+                    // Handle Array Clear Flags
+                    // p2d_music_data: clear_flag: [0,0,4,0,0] -> display max
+                    let lamp = 0;
+                    if(Array.isArray(s.clear_flag)) {
+                         lamp = Math.max(...s.clear_flag.map(v => parseInt(v.$numberInt || v || 0)));
+                    } else {
+                         lamp = parseInt(s.clear_type?.$numberInt || s.clear_type || s.clear_flag || 0);
+                    }
+                    
+                    let lampClass = 'lamp-pill';
+                    let lampBg = '#333';
+                    let lampText = 'FAIL';
+                    if(lamp == 1) { lampBg = 'var(--success)'; lampText = 'CLEAR'; }
+                    if(lamp >= 6) { lampBg = 'var(--warning)'; lampText = 'HARD'; }
+                    if(lamp >= 7) { lampBg = 'cyan'; lampText = 'FC'; }
+
+                    row.innerHTML = `
+                        <td style="font-family:var(--font-mono)">${mid}</td>
+                        <td><strong>${meta.title}</strong></td>
+                        <td style="font-size:0.8rem">${meta.artist}</td>
+                        <td style="font-family:var(--font-mono); color:var(--primary); font-weight:bold;">${scoreVal}</td>
+                        <td><span class="${lampClass}" style="background:${lampBg}; color:black;">${lampText}</span></td>
+                        <td><button class="btn-danger" style="padding:2px 5px; font-size:0.7rem;" onclick="Scores.delete(${mid})">X</button></td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            },
+            loadRival: (file) => { App.log("Comparison logic loaded (Mock)"); },
+            delete: (id) => { State.scores = State.scores.filter(s => (s.music_id?.$numberInt != id && s.music_id != id)); Scores.render(); }
+        };
+
+        // --- RIVALS LOGIC ---
+        const Rivals = {
+            render: () => {
+                const spList = document.getElementById('sp-rivals-list');
+                const dpList = document.getElementById('dp-rivals-list');
+                spList.innerHTML = ''; dpList.innerHTML = '';
+
+                for(let i=0; i<3; i++) {
+                    const val = State.rivals.sp_rivals[i] || "";
+                    spList.innerHTML += `<div><label>Rival ${i+1}</label><input type="text" value="${val}" onchange="Rivals.update('sp', ${i}, this.value)"></div>`;
+                }
+                for(let i=0; i<3; i++) {
+                    const val = State.rivals.dp_rivals[i] || "";
+                    dpList.innerHTML += `<div><label>Rival ${i+1}</label><input type="text" value="${val}" onchange="Rivals.update('dp', ${i}, this.value)"></div>`;
+                }
+            },
+            update: (mode, idx, val) => {
+                const key = mode + '_rivals';
+                if(!State.rivals[key]) State.rivals[key] = [];
+                State.rivals[key][idx] = val;
+            }
+        };
+
+        // --- ANALYTICS LOGIC ---
+        const Analytics = {
+            render: () => {
+                // DJ POINT Calculation (Estimate)
+                let totalDjPoint = 0;
+                let totalScore = 0;
+                let count = 0;
+                let fcCount = 0;
+
+                State.scores.forEach(s => {
+                    // Extract max score from array or object
+                    let score = 0;
+                    if(Array.isArray(s.score)) score = Math.max(...s.score.map(v => parseInt(v.$numberInt || v || 0)));
+                    else score = parseInt(s.score?.$numberInt || s.score || 0);
+
+                    // Extract lamp
+                    let clear = 0;
+                    if(Array.isArray(s.clear_flag)) clear = Math.max(...s.clear_flag.map(v => parseInt(v.$numberInt || v || 0)));
+                    else clear = parseInt(s.clear_type?.$numberInt || s.clear_type || 0);
+                    
+                    let level = 10; 
+                    if(score > 3000) level = 12;
+
+                    let p = (score / 10000) * level * (clear >= 7 ? 1.5 : 1.0);
+                    totalDjPoint += p;
+                    totalScore += score;
+                    count++;
+                    if(clear >= 7) fcCount++;
+                });
+
+                document.getElementById('calc-djpoint').innerText = Math.floor(totalDjPoint).toLocaleString();
+                document.getElementById('calc-avg-score').innerText = count > 0 ? Math.floor(totalScore/count).toLocaleString() : 0;
+                document.getElementById('calc-fc-rate').innerText = count > 0 ? ((fcCount/count)*100).toFixed(1) + "%" : "0%";
+
+                // RADAR CHART (SVG)
+                const stats = [
+                    { label: "NOTES", val: 80 },
+                    { label: "CHORD", val: 65 },
+                    { label: "PEAK", val: 90 },
+                    { label: "CHARGE", val: 40 },
+                    { label: "SCRATCH", val: 70 },
+                    { label: "SOFLAN", val: 50 }
+                ];
+                
+                const cx = 150, cy = 150, r = 100;
+                let polyPoints = "";
+                let bgPoly = "";
+
+                stats.forEach((stat, i) => {
+                    const angle = (Math.PI * 2 * i) / 6 - Math.PI / 2;
+                    const valR = (stat.val / 100) * r;
+                    const x = cx + Math.cos(angle) * valR;
+                    const y = cy + Math.sin(angle) * valR;
+                    polyPoints += `${x},${y} `;
+                    
+                    const bgX = cx + Math.cos(angle) * r;
+                    const bgY = cy + Math.sin(angle) * r;
+                    bgPoly += `${bgX},${bgY} `;
+                });
+
+                let svg = `<svg viewBox="0 0 300 300" style="width:100%; height:100%;">
+                    <polygon points="${bgPoly}" fill="#222" stroke="#444" stroke-width="1" />
+                    <polygon points="${polyPoints}" fill="rgba(99, 102, 241, 0.5)" stroke="var(--primary)" stroke-width="2" />
+                    ${stats.map((s, i) => {
+                        const angle = (Math.PI * 2 * i) / 6 - Math.PI / 2;
+                        const x = cx + Math.cos(angle) * (r + 20);
+                        const y = cy + Math.sin(angle) * (r + 20);
+                        return `<text x="${x}" y="${y}" fill="#fff" font-size="10" text-anchor="middle" alignment-baseline="middle">${s.label}</text>`;
+                    }).join('')}
+                </svg>`;
+                
+                document.getElementById('radar-container').innerHTML = svg;
+            }
+        };
+
+        // --- BATCH ---
+        const Batch = {
+            unlockAll: () => {
+                if(!confirm("Unlock all items?")) return;
+                for(let i=0; i<500; i++) State.items[`I1100${i.toString().padStart(3,'0')}`] = 1;
+                App.log("Batch Unlock Complete");
+            },
+            maxBits: () => {
+                State.resources.bit = 9999999;
+                State.resources.ldisc = 9999;
+                State.resources.infinitas_ticket = 9999;
+                Profile.render(); 
+                App.log("Max Resources Applied");
+            },
+            convertFail: () => {
+                let c = 0;
+                State.scores.forEach(s => { 
+                    // Works for simple objects or array-based
+                    if (Array.isArray(s.clear_flag)) {
+                        s.clear_flag = s.clear_flag.map(v => {
+                            let val = v.$numberInt || v;
+                            if (val == 0) { c++; return { $numberInt: "1" }; }
+                            return v;
+                        });
+                    } else {
+                        let lamp = s.clear_type?.$numberInt || s.clear_type;
+                        if(lamp == 0) { 
+                            if(s.clear_type && s.clear_type.$numberInt) s.clear_type.$numberInt = "1";
+                            else s.clear_type = 1;
+                            c++; 
+                        }
+                    }
+                });
+                App.log(`Converted ${c} failed scores`);
+                if(document.getElementById('view-scores').style.display === 'block') Scores.render();
+            },
+            resetScores: () => {
+                if(confirm("Reset all scores to 0?")) {
+                    State.scores.forEach(s => {
+                         if (Array.isArray(s.score)) {
+                             s.score = s.score.map(v => ({ $numberInt: "0" }));
+                         } else {
+                             if(s.score && s.score.$numberInt) s.score.$numberInt = "0";
+                             else s.score = 0;
+                         }
+                    });
+                    App.log("Scores Reset");
+                    if(document.getElementById('view-scores').style.display === 'block') Scores.render();
+                }
+            },
+            fixMetadata: () => {
+                App.log("Metadata synced (Virtual).");
+            }
+        }
+
+        // --- INIT ---
+        window.onload = () => App.log("System Initialized.");
+        
+        // Re-binding Event Listeners correctly
+        const dropArea = document.getElementById('drop-area');
+        const fileInput = document.getElementById('file-input');
+        
+        if(dropArea) {
+            dropArea.addEventListener('dragover', (e) => { e.preventDefault(); e.currentTarget.classList.add('dragover'); });
+            dropArea.addEventListener('dragleave', (e) => { e.currentTarget.classList.remove('dragover'); });
+            dropArea.addEventListener('drop', (e) => { 
+                e.preventDefault(); e.currentTarget.classList.remove('dragover');
+                Data.handleFiles(e.dataTransfer.files);
+            });
+            // Ensure click triggers input
+            dropArea.addEventListener('click', () => fileInput.click());
+        }
+
+        if(fileInput) {
+            // Ensure change event is bound
+            fileInput.addEventListener('change', (e) => Data.handleFiles(e.target.files));
+        }
+
+    </script>
+</body>
+</html>
