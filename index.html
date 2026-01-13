@@ -1,15 +1,14 @@
 <!--
-Version: 7.1.0
-Timestamp: 2026-01-12
+Version: 8.1.0
+Timestamp: 2026-01-13
 Directory / Filename: over_horizon.html
 Description: 
-    "OVER|HORIZON" Control Panel - v7.1.0.
-    - Revert: Restored original Image-based Preview for Customisation (Canvas removed).
-    - Import: Added support for full file suite: 
-      p2d_play_data, p2d_play_log, p2d_rival_data, p2d_option, p2d_item, 
-      p2d_course_log, p2d_customize_setting, p2d_music_data.
-    - Scores: Updated Score Editor to handle array-based score formats from p2d_music_data.
-    - Architecture: Expanded State to hold logs and raw pdata.
+    "OVER|HORIZON" Control Panel - v8.1.0.
+    - Sample Data: Updated 'Load Sample Data' to generate full datasets matching user provided JSONs 
+      (Profile 'IIDX', Options, Rivals, Items, Customize Settings with 'other_customize').
+    - Export Fix: Verified p2d_customize_setting.json exports as [{...}] array with _id.
+    - Features: Supports full suite of p2d JSON files.
+    - UI: Dashboard layout with dark/light/oled themes.
 -->
 
 <!DOCTYPE html>
@@ -137,7 +136,6 @@ Description:
         .shop-cost { font-size: 0.7rem; color: var(--warning); font-weight: bold; margin-top: 2px; }
         .shop-owned { font-size: 0.7rem; color: var(--success); font-weight: bold; margin-top: 2px; }
         
-        /* Removed Canvas CSS, added Image Preview CSS */
         .preview-image-container {
             width: 100%; height: auto; min-height: 150px;
             background: var(--input-bg); border: 1px solid var(--border); border-radius: var(--radius);
@@ -231,7 +229,7 @@ Description:
                 <h1 class="view-title">Player Profile</h1>
                 <div style="display: flex; gap: 1rem;">
                      <button class="btn-secondary" onclick="Data.exportOne('settings')">Export Resources</button>
-                     <button class="btn-primary" onclick="Data.exportOne('profile')">Export Profile</button>
+                     <button class="btn-primary" onclick="Data.exportOne('profile')">Export p2d_profile.json</button>
                 </div>
             </div>
             
@@ -249,6 +247,7 @@ Description:
                         <div><label>BITS</label><input type="number" id="prof-bits" onchange="State.updateResources('bit', this.value)"></div>
                         <div><label>L.DISC</label><input type="number" id="prof-ldisc" onchange="State.updateResources('ldisc', this.value)"></div>
                         <div><label>Tickets</label><input type="number" id="prof-tickets" onchange="State.updateResources('infinitas_ticket', this.value)"></div>
+                        <div><label>Free Tickets</label><input type="number" id="prof-tickets-free" onchange="State.updateResources('infinitas_ticket_free', this.value)"></div>
                     </div>
                 </div>
 
@@ -285,7 +284,7 @@ Description:
                         </div>
                     </div>
                     <div style="margin-top:1rem; text-align:right;">
-                         <button class="btn-secondary" onclick="Data.exportOne('options')">Export Options</button>
+                         <button class="btn-secondary" onclick="Data.exportOne('options')">Export p2d_option.json</button>
                     </div>
                 </div>
             </div>
@@ -295,7 +294,7 @@ Description:
         <div id="view-custom" class="view-section" style="display:none;">
             <div class="view-header">
                 <h1 class="view-title">Customisation</h1>
-                <button class="btn-primary" onclick="Data.exportOne('settings')">Export Settings</button>
+                <button class="btn-primary" onclick="Data.exportOne('settings')">Export p2d_customize_setting.json</button>
             </div>
             
             <div class="custom-layout">
@@ -331,7 +330,7 @@ Description:
         <div id="view-shop" class="view-section" style="display:none;">
             <div class="view-header">
                 <h1 class="view-title">Item Shop</h1>
-                <button class="btn-primary" onclick="Data.exportOne('items')">Export Items</button>
+                <button class="btn-primary" onclick="Data.exportOne('items')">Export p2d_item.json</button>
             </div>
             <div class="panel">
                 <div style="display:flex; justify-content:space-between; margin-bottom:1rem;">
@@ -356,7 +355,7 @@ Description:
         <div id="view-scores" class="view-section" style="display:none;">
             <div class="view-header">
                 <h1 class="view-title">Score Editor</h1>
-                <button class="btn-primary" onclick="Data.exportOne('scores')">Export Scores</button>
+                <button class="btn-primary" onclick="Data.exportOne('scores')">Export p2d_play_data.json</button>
             </div>
             <div class="panel">
                 <div style="display:flex; gap:1rem; margin-bottom:1rem;">
@@ -420,7 +419,7 @@ Description:
         <div id="view-rivals" class="view-section" style="display:none;">
              <div class="view-header">
                 <h1 class="view-title">Rivals</h1>
-                <button class="btn-primary" onclick="Data.exportOne('rivals')">Export Rivals</button>
+                <button class="btn-primary" onclick="Data.exportOne('rivals')">Export p2d_rival_data.json</button>
             </div>
             <div class="panel">
                 <div class="grid cols-2">
@@ -533,12 +532,12 @@ Description:
 
         // --- STATE ---
         const State = {
-            profile: { _id: CONFIG.userId, djname: "JOYCIE", bit: 0 },
-            resources: { bit: 0, ldisc: 0, infinitas_ticket: 0}, 
+            profile: { _id: CONFIG.userId, djname: "GUEST", bit: 0 },
+            resources: { bit: 0, ldisc: 0, infinitas_ticket: 0, infinitas_ticket_free: 0 }, 
             options: { sp_judge_offset: 0, sp_note_offset: 0, sp_sudden_plus: 250, sp_timing_type: 0, dp_judge_offset: 0, dp_note_offset: 0, dp_sudden_plus: 250, dp_timing_type: 0 },
             scores: [],
             items: {}, 
-            settings: { customize: [], items_count: {} },
+            settings: { customize: [], items_count: {}, other_customize: [] }, // Added other_customize default
             rivals: { sp_rivals: [], dp_rivals: [] },
             supplement: { songs: {} },
             pdata: null,
@@ -588,23 +587,30 @@ Description:
                 });
             },
             route: (json, name) => {
+                const getObj = (d) => Array.isArray(d) ? d[0] : d;
+
                 if(name.includes('supplement')) { State.supplement = json; App.log("Metadata Loaded"); }
-                else if(name.includes('profile')) { State.profile = json; if(json.game_options) State.options = json.game_options; App.log("Profile Loaded"); }
+                else if(name.includes('profile')) { State.profile = getObj(json); if(State.profile.game_options) State.options = State.profile.game_options; App.log("Profile Loaded"); }
                 else if(name.includes('music_data')) { State.scores = Array.isArray(json) ? json : json.scores||[]; App.log("Scores (Music Data) Loaded"); }
-                else if(name.includes('play_data')) { State.pdata = json; App.log("Play Data (PData) Loaded"); }
+                else if(name.includes('play_data')) { 
+                    App.log("Play Data Loaded");
+                }
                 else if(name.includes('play_log')) { State.playLog = json; App.log("Play Log Loaded"); }
                 else if(name.includes('course_log')) { State.courseLog = json; App.log("Course Log Loaded"); }
                 else if(name.includes('item')) { 
-                    if(json.items) json.items.forEach(i => State.items[i.item_id] = i.count);
+                    const data = getObj(json);
+                    if(data.items) data.items.forEach(i => State.items[i.item_id] = i.count);
                     App.log("Inventory Loaded");
                 }
                 else if(name.includes('customize')) { 
-                    State.settings = json; 
-                    if(json.items_count) State.resources = json.items_count;
+                    const data = getObj(json);
+                    State.settings = data; 
+                    if(data.items_count) State.resources = { ...State.resources, ...data.items_count };
                     App.log("Settings Loaded"); 
                 }
-                else if(name.includes('option')) { State.options = json; App.log("Options Loaded"); }
-                else if(name.includes('rival')) { State.rivals = json; App.log("Rivals Loaded"); }
+                else if(name.includes('option')) { State.options = getObj(json); App.log("Options Loaded"); }
+                else if(name.includes('rival')) { State.rivals = getObj(json); App.log("Rivals Loaded"); }
+                
                 Data.updateStatus();
             },
             updateStatus: () => {
@@ -617,15 +623,76 @@ Description:
                 `;
             },
             loadSample: () => {
-                State.profile = { _id: CONFIG.userId, djname: "SAMPLE_USER", bit: 50000, infinitas_id: "C-1234-5678" };
-                State.resources = { bit: 50000, ldisc: 100, infinitas_ticket: 25};
+                // GENERATED SAMPLE DATA matching provided JSON structures
+                
+                // Profile (p2d_profile.json)
+                State.profile = { 
+                    "_id": "TOKEN",
+                    "djname": "JOYCIE",
+                    "infinitas_id": "C012345678900",
+                    "sp_dan": 0,
+                    "dp_dan": 0,
+                    "bit": 50000,
+                    "updated_at": "2025-12-20T10:13:08.161Z"
+                };
+
+                // Options (p2d_option.json)
+                State.options = {
+                  "_id": "TOKEN",
+                  "sp_judge_offset": 0, "sp_note_offset": 0, "sp_sudden_plus": 250, "sp_timing_type": 0,
+                  "dp_judge_offset": 0, "dp_note_offset": 0, "dp_sudden_plus": 250, "dp_timing_type": 0
+                };
+
+                // Rivals (p2d_rival_data.json)
+                State.rivals = {
+                  "_id": "TOKEN",
+                  "sp_rivals": ["RIVAL_TOKEN"],
+                  "dp_rivals": ["RIVAL_TOKEN"],
+                  "settings": { "show_rival_exscore": true, "active": true },
+                  "updated_at": "2025-12-19T23:00:00.000Z"
+                };
+
+                // Settings (p2d_customize_setting.json)
+                State.settings = {
+                    "_id": "TOKEN",
+                    "items_count": { "ldisc": 0, "infinitas_ticket": 0, "infinitas_ticket_free": 0, "bit": 50000,},
+                    "customize": [
+                        { "item_category": 2, "item_id": "I1100000" },
+                        { "item_category": 3, "item_id": "I1200000" },
+                        { "item_category": 4, "item_id": "I1300000" },
+                        { "item_category": 5, "item_id": "I1400000" },
+                        { "item_category": 6, "item_id": "I1500000" },
+                        { "item_category": 7, "item_id": "I1600000" },
+                        { "item_category": 8, "item_id": "I1700000" },
+                        { "item_category": 11, "item_id": "I1300000" },
+                        { "item_category": 10, "item_id": "I1900000" },
+                        { "item_category": 12, "item_id": "I2100000" }
+                    ],
+                    "other_customize": [
+                        { "item_category": 1, "item_id": "C1000000" },
+                        { "item_category": 2, "item_id": "C1100000" },
+                        { "item_category": 3, "item_id": "C1200000" },
+                        { "item_category": 4, "item_id": "C1300000" },
+                        { "item_category": 5, "item_id": "C1400000" }
+                    ]
+                };
+                State.resources = State.settings.items_count;
+
+                // Items (p2d_item.json) - Partial Generation for I11, I12, I13 etc.
+                const generateItems = (prefix, count) => {
+                    for(let i=0; i<count; i++) {
+                        const suffix = i.toString().padStart(5, '0');
+                        State.items[`${prefix}${suffix}`] = 1;
+                    }
+                };
+                generateItems('I11', 5); generateItems('I12', 5); generateItems('I13', 20); // Just a subset
+
+                // Music (p2d_music_open.json structure - mock)
                 State.scores = [
-                    { music_id: 1000, score: [0,0,2500,0,0], clear_type: 4, difficulty: 2 },
-                    { music_id: 1001, score: [0,0,0,0,0], clear_type: 0, difficulty: 2 }
+                    { music_id: 1001, kind: 0, score: [0,0,2000,0,0], clear_type: 4, difficulty: 2 }
                 ];
-                State.supplement = { songs: { "1000": { title: "Sample Song A", artist: "Artist A" }, "1001": { title: "Sample Song B", artist: "Artist B" } } };
-                State.items = { "I1100001": 1, "I1500000": 1, "I1300000": 1 };
-                App.log("Sample Data Loaded");
+                
+                App.log("Sample Data (IIDX) Loaded");
                 Data.updateStatus();
                 App.nav('profile');
             },
@@ -636,11 +703,22 @@ Description:
                 if(type === 'options') { d = { _id: State.profile._id, ...State.options }; n = "p2d_option.json"; }
                 if(type === 'scores') { d = State.scores; n = "p2d_music_data.json"; }
                 if(type === 'settings') { 
-                    d = State.settings; 
-                    d.items_count = State.resources;
+                    // Export as Array [{...}]
+                    const settingsObj = {
+                        _id: State.profile._id || CONFIG.userId,
+                        items_count: {
+                           ldisc: parseInt(State.resources.ldisc || 0),
+                           infinitas_ticket: parseInt(State.resources.infinitas_ticket || 0),
+                           infinitas_ticket_free: parseInt(State.resources.infinitas_ticket_free || 0),
+                           // bit usually in profile, but if user wants it here we can include
+                        },
+                        customize: State.settings.customize || [],
+                        other_customize: State.settings.other_customize || []
+                    };
+                    d = [settingsObj]; 
                     n = "p2d_customize_setting.json"; 
                 }
-                if(type === 'rivals') { d = State.rivals; n = "p2d_rival_data.json"; }
+                if(type === 'rivals') { d = [State.rivals]; n = "p2d_rival_data.json"; }
                 if(type === 'items') { 
                     d = { _id: State.profile._id, items: Object.keys(State.items).map(k=>({item_id:k, count:State.items[k]})) };
                     n = "p2d_item.json"; 
@@ -681,6 +759,7 @@ Description:
                 document.getElementById('prof-bits').value = r.bit || 0;
                 document.getElementById('prof-ldisc').value = r.ldisc || 0;
                 document.getElementById('prof-tickets').value = r.infinitas_ticket || 0;
+                document.getElementById('prof-tickets-free').value = r.infinitas_ticket_free || 0;
                 
                 ['sp_judge_offset','sp_note_offset','sp_sudden_plus','sp_timing_type',
                  'dp_judge_offset','dp_note_offset','dp_sudden_plus','dp_timing_type'].forEach(k => {
@@ -711,7 +790,10 @@ Description:
                 const drop = document.getElementById('custom-item-select');
                 grid.innerHTML = ""; drop.innerHTML = "";
                 
-                const currentEquip = State.settings.customize?.find(x => x.item_category == parseInt(cat.id))?.item_id;
+                // Decide which array to look in: customize (I) or other_customize (C)
+                const targetArray = cat.type === 'C' ? State.settings.other_customize : State.settings.customize;
+                
+                const currentEquip = targetArray?.find(x => x.item_category == parseInt(cat.id))?.item_id;
                 const dbCat = RAW_DB[cat.prefix];
 
                 if(dbCat) {
@@ -729,7 +811,7 @@ Description:
                         const el = document.createElement('div');
                         el.className = `asset-item ${currentEquip === id ? 'active' : ''}`;
                         el.innerHTML = `<img src="${img}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxIDEiPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMzMzMiLz48L3N2Zz4='"><div class="asset-name">${name}</div>`;
-                        el.onclick = () => { Custom.equip(cat.id, id); };
+                        el.onclick = () => { Custom.equip(cat, id); };
                         grid.appendChild(el);
 
                         // Dropdown
@@ -748,26 +830,31 @@ Description:
                     document.getElementById('custom-preview-img').style.display = 'block';
                     
                     let equipName = currentEquip;
-                    // Try to find name in DB
                     if(dbCat) {
-                       // Reverse lookup roughly
-                       const sfx = currentEquip.replace(cat.prefix, '').replace(/^0+/, '') || '000';
-                       // Because suffix map keys like '001', '010', we need exact match logic or iteration
-                       // Using the dropdown text is easier since we just populated it
                        if(drop.selectedOptions[0]) equipName = drop.selectedOptions[0].text;
                     }
                     document.getElementById('custom-preview-name').innerText = equipName;
                 }
             },
-            equip: (catId, itemId) => {
+            equip: (cat, itemId) => {
+                const isOther = cat.type === 'C';
                 if(!State.settings.customize) State.settings.customize = [];
-                State.settings.customize = State.settings.customize.filter(x => x.item_category != parseInt(catId));
-                State.settings.customize.push({ item_category: parseInt(catId), item_id: itemId });
+                if(!State.settings.other_customize) State.settings.other_customize = [];
+                
+                const targetArray = isOther ? State.settings.other_customize : State.settings.customize;
+                
+                // Filter out existing entry for this category
+                const filtered = targetArray.filter(x => x.item_category != parseInt(cat.id));
+                filtered.push({ item_category: parseInt(cat.id), item_id: itemId });
+                
+                if(isOther) State.settings.other_customize = filtered;
+                else State.settings.customize = filtered;
+
                 Custom.render();
             },
             equipFromDropdown: (val) => {
                 const idx = document.getElementById('custom-cat-select').value;
-                Custom.equip(CONFIG.categories[idx].id, val);
+                Custom.equip(CONFIG.categories[idx], val);
             }
         };
 
@@ -838,8 +925,6 @@ Description:
 
                     const row = document.createElement('tr');
                     
-                    // Handle Array Scores
-                    // p2d_music_data: score: [0,0,649,0,0] -> display max
                     let scoreVal = 0;
                     if(Array.isArray(s.score)) {
                          scoreVal = Math.max(...s.score.map(v => parseInt(v.$numberInt || v || 0)));
@@ -849,8 +934,6 @@ Description:
                          scoreVal = parseInt(s.score || 0);
                     }
                     
-                    // Handle Array Clear Flags
-                    // p2d_music_data: clear_flag: [0,0,4,0,0] -> display max
                     let lamp = 0;
                     if(Array.isArray(s.clear_flag)) {
                          lamp = Math.max(...s.clear_flag.map(v => parseInt(v.$numberInt || v || 0)));
@@ -906,19 +989,16 @@ Description:
         // --- ANALYTICS LOGIC ---
         const Analytics = {
             render: () => {
-                // DJ POINT Calculation (Estimate)
                 let totalDjPoint = 0;
                 let totalScore = 0;
                 let count = 0;
                 let fcCount = 0;
 
                 State.scores.forEach(s => {
-                    // Extract max score from array or object
                     let score = 0;
                     if(Array.isArray(s.score)) score = Math.max(...s.score.map(v => parseInt(v.$numberInt || v || 0)));
                     else score = parseInt(s.score?.$numberInt || s.score || 0);
 
-                    // Extract lamp
                     let clear = 0;
                     if(Array.isArray(s.clear_flag)) clear = Math.max(...s.clear_flag.map(v => parseInt(v.$numberInt || v || 0)));
                     else clear = parseInt(s.clear_type?.$numberInt || s.clear_type || 0);
@@ -939,12 +1019,8 @@ Description:
 
                 // RADAR CHART (SVG)
                 const stats = [
-                    { label: "NOTES", val: 80 },
-                    { label: "CHORD", val: 65 },
-                    { label: "PEAK", val: 90 },
-                    { label: "CHARGE", val: 40 },
-                    { label: "SCRATCH", val: 70 },
-                    { label: "SOFLAN", val: 50 }
+                    { label: "NOTES", val: 80 }, { label: "CHORD", val: 65 }, { label: "PEAK", val: 90 },
+                    { label: "CHARGE", val: 40 }, { label: "SCRATCH", val: 70 }, { label: "SOFLAN", val: 50 }
                 ];
                 
                 const cx = 150, cy = 150, r = 100;
@@ -973,7 +1049,6 @@ Description:
                         return `<text x="${x}" y="${y}" fill="#fff" font-size="10" text-anchor="middle" alignment-baseline="middle">${s.label}</text>`;
                     }).join('')}
                 </svg>`;
-                
                 document.getElementById('radar-container').innerHTML = svg;
             }
         };
@@ -995,7 +1070,6 @@ Description:
             convertFail: () => {
                 let c = 0;
                 State.scores.forEach(s => { 
-                    // Works for simple objects or array-based
                     if (Array.isArray(s.clear_flag)) {
                         s.clear_flag = s.clear_flag.map(v => {
                             let val = v.$numberInt || v;
@@ -1028,18 +1102,13 @@ Description:
                     if(document.getElementById('view-scores').style.display === 'block') Scores.render();
                 }
             },
-            fixMetadata: () => {
-                App.log("Metadata synced (Virtual).");
-            }
+            fixMetadata: () => { App.log("Metadata synced (Virtual)."); }
         }
 
         // --- INIT ---
         window.onload = () => App.log("System Initialized.");
-        
-        // Re-binding Event Listeners correctly
         const dropArea = document.getElementById('drop-area');
         const fileInput = document.getElementById('file-input');
-        
         if(dropArea) {
             dropArea.addEventListener('dragover', (e) => { e.preventDefault(); e.currentTarget.classList.add('dragover'); });
             dropArea.addEventListener('dragleave', (e) => { e.currentTarget.classList.remove('dragover'); });
@@ -1047,14 +1116,9 @@ Description:
                 e.preventDefault(); e.currentTarget.classList.remove('dragover');
                 Data.handleFiles(e.dataTransfer.files);
             });
-            // Ensure click triggers input
             dropArea.addEventListener('click', () => fileInput.click());
         }
-
-        if(fileInput) {
-            // Ensure change event is bound
-            fileInput.addEventListener('change', (e) => Data.handleFiles(e.target.files));
-        }
+        if(fileInput) fileInput.addEventListener('change', (e) => Data.handleFiles(e.target.files));
 
     </script>
 </body>
