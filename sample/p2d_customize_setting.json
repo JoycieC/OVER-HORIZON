@@ -1,0 +1,72 @@
+{
+  "_id": "INSERT_TOKEN_HERE",
+  "items_count": {
+    "ldisc": 0,
+    "infinitas_ticket": 0,
+    "infinitas_ticket_free": 0
+  },
+  "customize": [
+    {
+      "item_category": 2,
+      "item_id": "I1100000"
+    },
+    {
+      "item_category": 3,
+      "item_id": "I1200000"
+    },
+    {
+      "item_category": 4,
+      "item_id": "I1300000"
+    },
+    {
+      "item_category": 5,
+      "item_id": "I1400000"
+    },
+    {
+      "item_category": 6,
+      "item_id": "I1500000"
+    },
+    {
+      "item_category": 7,
+      "item_id": "I1600000"
+    },
+    {
+      "item_category": 8,
+      "item_id": "I1700000"
+    },
+    {
+      "item_category": 11,
+      "item_id": "I1300000"
+    },
+    {
+      "item_category": 10,
+      "item_id": "I1900000"
+    },
+    {
+      "item_category": 12,
+      "item_id": "I2100000"
+    }
+  ],
+  "other_customize": [
+    {
+      "item_category": 1,
+      "item_id": "C1000000"
+    },
+    {
+      "item_category": 2,
+      "item_id": "C1100000"
+    },
+    {
+      "item_category": 3,
+      "item_id": "C1200000"
+    },
+    {
+      "item_category": 4,
+      "item_id": "C1300000"
+    },
+    {
+      "item_category": 5,
+      "item_id": "C1400000"
+    }
+  ]
+}

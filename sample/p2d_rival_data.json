@@ -1,0 +1,16 @@
+[
+  {
+    "_id": "INSERT_TOKEN_HERE",
+    "sp_rivals": [
+      "RIVAL_TOKEN"
+    ],
+    "dp_rivals": [
+      "RIVAL_TOKEN"
+    ],
+    "settings": {
+      "show_rival_exscore": true,
+      "active": true
+    },
+    "updated_at": "2025-12-19T23:00:00.000Z"
+  }
+]
