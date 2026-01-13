@@ -1,13 +1,12 @@
 <!--
-Version: 8.1.0
+Version: 9.3.0
 Timestamp: 2026-01-13
 Directory / Filename: over_horizon.html
 Description: 
-    "OVER|HORIZON" Control Panel - v8.1.0.
-    - Sample Data: Updated 'Load Sample Data' to generate full datasets matching user provided JSONs 
-      (Profile 'IIDX', Options, Rivals, Items, Customize Settings with 'other_customize').
-    - Export Fix: Verified p2d_customize_setting.json exports as [{...}] array with _id.
-    - Features: Supports full suite of p2d JSON files.
+    "OVER|HORIZON" Control Panel - v9.3.0.
+    - Feature: Added animated GIF support for customization previews (tries GIF first, falls back to PNG).
+    - Sample Data: Updated 'Load Sample Data' to exactly match user provided reference JSONs.
+    - Export: Confirmed strict structure for p2d_customize_setting.json export.
     - UI: Dashboard layout with dark/light/oled themes.
 -->
 
@@ -208,8 +207,7 @@ Description:
                     <div style="font-size: 2rem; margin-bottom: 1rem;">📂</div>
                     <h3>Drag & Drop JSON Files</h3>
                     <p style="font-size:0.8rem; margin-top:0.5rem; opacity:0.7;">
-                        <b>Supports:</b><br>p2d_profile.json<br>p2d_play_data.json<br>p2d_play_log.json<br>p2d_item.json<br>p2d_option.json<br>p2d_customize_setting.json<br>p2d_music_data.json<br>p2d_course_log.json<br>p2d_rival_data.json<br>horizon-supplement.json
-                    </p>
+                        <b>Supports:</b><br>p2d_profile.json<br>p2d_play_data.json<br>p2d_play_log.json<br>p2d_item.json<br>p2d_option.json<br>p2d_customize_setting.json<br>p2d_music_data.json<br>p2d_course_log.json<br>p2d_rival_data.json<br>horizon-supplement.json                    </p>
                     <input type="file" id="file-input" multiple hidden accept=".json">
                 </div>
             </div>
@@ -248,6 +246,7 @@ Description:
                         <div><label>L.DISC</label><input type="number" id="prof-ldisc" onchange="State.updateResources('ldisc', this.value)"></div>
                         <div><label>Tickets</label><input type="number" id="prof-tickets" onchange="State.updateResources('infinitas_ticket', this.value)"></div>
                         <div><label>Free Tickets</label><input type="number" id="prof-tickets-free" onchange="State.updateResources('infinitas_ticket_free', this.value)"></div>
+                        <div><label>Premium</label><input type="number" id="prof-mobile" onchange="State.updateResources('mobile_point', this.value)"></div>
                     </div>
                 </div>
 
@@ -284,7 +283,7 @@ Description:
                         </div>
                     </div>
                     <div style="margin-top:1rem; text-align:right;">
-                         <button class="btn-secondary" onclick="Data.exportOne('options')">Export p2d_option.json</button>
+                         <button class="btn-secondary" onclick="Data.exportOne('options')">Export Options</button>
                     </div>
                 </div>
             </div>
@@ -497,13 +496,13 @@ Description:
             "C12": { "000": "OFF", "001": "ON" },
             "C13": { "000": "DEFAULT", "001": "Thin", "002": "Thinnner", "003": "Thick" },
             "C14": { "000": "DEFAULT", "001": "Short", "002": "Shorter", "003": "Long" },
-            "I11": { "000": "DEFAULT", "001": "初代 (first gen)", "002": "9th Style", "003": "IIDX RED", "004": "HAPPY SKY", "005": "DistorteD", "006": "GOLD", "007": "DJ TROOPERS", "008": "EMPRESS", "009": "SIRIUS", "010": "Resort Anthem", "011": "Lincle", "012": "tricoro", "013": "SPADA", "014": "オンリーワンボム (ONLY ONE BOMB)", "015": "PENDUAL", "016": "copula", "017": "SINOBUZ", "018": "キャノンスパーク (CANNON SPARK)", "019": "Rootage", "020": "HEROIC VERSE", "021": "BISTROVERボム (BISTROVER BOMB)", "022": "いいねフラッシュ (Like Flash)", "023": "RESIDENT" },
+            "I11": { "000": "DEFAULT", "001": "初代 (first gen)", "002": "9th Style", "003": "IIDX RED", "004": "HAPPY SKY", "005": "DistorteD", "006": "GOLD", "007": "DJ TROOPERS", "008": "EMPRESS", "009": "SIRIUS", "010": "Resort Anthem", "011": "Lincle", "012": "tricoro", "013": "SPADA", "014": "オンリーワンボム (ONLY ONE BOMB)", "015": "PENDUAL", "016": "copula", "017": "SINOBUZ", "018": "キャノンスパーク (CANNON SPARK)", "019": "Rootage", "020": "HEROIC VERSE", "021": "BISTROVERボム (BISTROVER BOMB)", "022": "いいねフラッシュ (Like Flash)", "023": "RESIDENT", "024": "EPOLIS", "025": "Pinky Crush" },
             "I12": { "000": "DEFAULT", "001": "トラン (TRAN)", "002": "JOJO", "003": "デルタ (DELTA)", "004": "オレンジディスク (ORANGE DISC)", "005": "DistorteD", "006": "GOLD", "007": "DJ TROOPERS", "008": "EMPRESS", "009": "SIRIUS", "010": "Resort Anthem", "011": "Lincle", "012": "tricoro", "013": "SPADA", "014": "灼熱 (shakunetsu)", "015": "オンリーワンレコード (ONLY ONE REECORD)", "016": "PENDUAL", "017": "copula", "018": "SINOBUZ", "019": "キャノンボーラーズ (CANNON BALLERS)", "020": "Rootage", "021": "HEROIC VERSE" },
-            "I13": { "000": "DEFAULT", "001": "sigsig", "002": "内部フレーム", "003": "空", "004": "KAMAITACHI", "005": "タオル", "006": "コスモス", "007": "度胸兄弟", "008": "Blind Justice", "009": "迷彩", "010": "bloomin feeling", "011": "Marie Antoinette", "012": "Elisha", "013": "Kung-fu Empire", "014": "Tune of beat#3", "015": "EMPRESS", "016": "Programmed World", "017": "3y3s", "018": "UMEGIRI", "019": "KANZAKI", "020": "Rock Da House", "021": "THE DOOR INTO RAINBOW", "022": "Aegis", "023": "Vermillion", "024": "Phoenix", "025": "Lucky Days", "026": "Almace", "027": "DIAMOND CROSSING", "028": "Mamonis", "029": "Ashemu", "030": "Bulluvegola", "031": "Beridzebeth", "032": "Levaslater", "033": "STN", "034": "Rche", "035": "Neulakyussra", "036": "Cybele", "037": "Cuvelia", "038": "Liberation", "039": "Praludium", "040": "少女アリスと箱庭幻想コンチェルト", "041": "ReGENERATION", "042": "20 system bg", "043": "旋律のドグマ～Miserables～/TYPE A", "044": "旋律のドグマ～Miserables～/TYPE B", "045": "Elektrick U-Phoria", "046": "MAGIC & LOVE", "047": "スパーダレリーフ", "048": "S!ck", "049": "CONCEPTUAL", "050": "ΕΛΠΙΣ", "051": "rumrum triplets", "052": "SYNC-ANTHEM", "053": "Thor's Hammer", "054": "Plan 8", "055": "仮想空間の旅人たち", "056": "8bit Princess", "057": "planarian", "058": "Dynamite", "059": "龍と少女とデコヒーレンス", "060": "トリカゴノ鳳凰", "061": "Proof of the existence", "062": "BRAVE GLOW/機動怪獣リングール", "063": "BRAVE GLOW/トリコロイダー", "064": "VEGA/VEGAうさぎ", "065": "VEGA/中のひと", "066": "カジノファイヤーことみちゃん", "067": "New Lights", "068": "灼熱くんやきそば", "069": "即席！脳直★ミュージックシステム", "070": "キャトられ恋はモ～モク", "071": "オンリーワンカバー", "072": "ジザル", "073": "ジャックティーロ", "074": "ジャックハンス", "075": "イェンス", "076": "アムドゥシアン", "077": "マクスウェリオン", "078": "ラプラシア", "079": "ルシェ", "080": "スモモ", "081": "ファウラ", "082": "ベリゼベス", "083": "エルピス・キラ", "084": "フェリーラ", "085": "オールパトナ", "086": "あいむちゃん", "087": "人魚のPrim", "088": "アヤカシ二人", "089": "SHELTER OF THE MIND", "090": "Acid Pumper", "091": "X", "092": "ハーティー", "093": "Nightmare before oversleep", "094": "Highcharge Divolt", "095": "Godspeed（少年）", "096": "車掌イージス", "097": "GENERATE", "098": "Dynamite", "099": "格闘乙女", "100": "レル DX2300系", "101": "つゆ太", "102": "La dolce primavera", "103": "AO-1", "104": "真 地獄超特急 -HELL or HELL-", "105": "モード", "106": "ミニョンヌ鉄道兄弟", "107": "冬椿", "108": "PAPAYAPA BASS", "109": "鴉", "110": "AsiaN distractive", "111": "TOGAKUSHI", "112": "Modular Technology", "113": "獅子霞麗ノ舞", "114": "Music is The Answer", "115": "!Viva!", "116": "SINOBUZ UI", "117": "ChaserXX", "118": "Amor De Verao", "119": "エディブルフラワーの独白", "120": "ハイ*ビスカス ft. Kanae Asaba", "121": "Midnight Lady", "122": "FUTURE is Dead", "123": "Break Stasis", "124": "草原の王女-軌跡を辿って-", "125": "25UI", "126": "焔極OVERKILL", "127": "Breakin' Chain", "128": "津軽雪", "129": "Exhaust Hype", "130": "Yellow Sketch(RX-Ver.S.P.L.)", "131": "Steel Edge", "132": "Go Ahead!!", "133": "Sky High", "134": "イザナミノナゲキ", "135": "GuNGNiR", "136": "ディッシュウォッシャー◎彡おいわちゃん", "137": "BroGamer", "138": "FUZIN RIZIN", "139": "Mare Nectaris", "140": "Quakes", "141": "Rave Cannon", "142": "ECHIDNA", "143": "Snakey Kung-fu", "144": "刃図羅", "145": "忍恋花", "146": "法具「バズラ」", "147": "HADES", "148": "DEATH†ZIGOQ", "149": "東京神話", "150": "Initiation", "151": "EMERALDAS", "152": "Chemical Cookie", "153": "ナイトシティー・アヴァンチュール", "154": "シムルグの目醒め", "155": "n'pa pa BBQ", "156": "ANCHOR", "157": "IIDX AIR RACE", "158": "THE DAY OF JUBILATIONS", "159": "HEISEI", "160": "IDC feat.REVERBEE (Mo'Cuts Ver)", "161": "Yum Yum Jelly", "162": "夏の匂い。キミの残像。 ft. Kanae Asaba", "163": "Hurry Hurry", "164": "OVERTIME", "165": "ミストレス・アンに花束を", "166": "Ember Lights", "167": "Rootage", "168": "Urban Constellations", "169": "金野火織の金色提言", "170": "龍王の霊廟(Mausoleum Of The Primal Dragon)", "171": "Painful Fate", "172": "Drastic Dramatic", "173": "抱きしめてモナムール", "174": "Trill auf G", "175": "Lethal Weapon", "176": "HEROIC VERSE", "177": "Primitive Vibes", "178": "Calvados Queen", "179": "Ska-sh All Neurons!!", "180": "Moving on", "181": "Hyper Drive feat. ぷにぷに電機", "182": "THE BRAVE MUST DIE", "183": "曼荼羅恋々", "184": "Silly Love", "185": "Change Yourself", "186": "Virus Funk" },
-            "I14": { "000": "DEFAULT", "001": "デジタル (DIGITAL)", "002": "スマート (smart)", "003": "メタリックブルー (metallic blue)", "004": "テクノ (techno)ワイヤー (wire)", "005": "ワイヤー (wire)", "006": "ABYSS", "007": "SPADA", "008": "ANCIENT", "009": "オンリーワンジャッジ (only one judge)", "010": "電光掲示板風 (dot matrix)", "011": "SINOBUZ", "012": "セグメント (segment)", "013": "Rootage", "014": "HEROIC VERSE", "015": "BISTROVER JUDGE", "016": "CastHour", "017": "RESIDENT" },
+            "I13": { "000": "DEFAULT" , "001": "sigsig" , "002": "内部フレーム" , "003": "空" , "004": "KAMAITACHI" , "005": "タオル" , "006": "コスモス" , "007": "度胸兄弟" , "008": "Blind Justice" , "009": "迷彩" , "010": "bloomin feeling" , "011": "Marie Antoinette" , "012": "Elisha" , "013": "Kung-fu Empire" , "014": "Tune of beat#3" , "015": "EMPRESS" , "016": "Programmed World" , "017": "3y3s" , "018": "UMEGIRI" , "019": "KANZAKI" , "020": "Rock Da House" , "021": "THE DOOR INTO RAINBOW" , "022": "Aegis" , "023": "Vermillion" , "024": "Phoenix" , "025": "Lucky Days" , "026": "Almace" , "027": "DIAMOND CROSSING" , "028": "Mamonis" , "029": "Ashemu" , "030": "Bulluvegola" , "031": "Beridzebeth" , "032": "Levaslater" , "033": "STN" , "034": "Rche" , "035": "Neulakyussra" , "036": "Cybele" , "037": "Cuvelia" , "038": "Liberation" , "039": "Praludium" , "040": "少女アリスと箱庭幻想コンチェルト" , "041": "ReGENERATION" , "042": "20 system bg" , "043": "旋律のドグマ～Miserables～/TYPE A" , "044": "旋律のドグマ～Miserables～/TYPE B" , "045": "Elektrick U-Phoria" , "046": "MAGIC & LOVE" , "047": "スパーダレリーフ" , "048": "S!ck" , "049": "CONCEPTUAL" , "050": "ΕΛΠΙΣ" , "051": "rumrum triplets" , "052": "SYNC-ANTHEM" , "053": "Thor's Hammer" , "054": "Plan 8" , "055": "仮想空間の旅人たち" , "056": "8bit Princess" , "057": "planarian" , "058": "Dynamite" , "059": "龍と少女とデコヒーレンス" , "060": "トリカゴノ鳳凰" , "061": "Proof of the existence" , "062": "BRAVE GLOW/機動怪獣リングール" , "063": "BRAVE GLOW/トリコロイダー" , "064": "VEGA/VEGAうさぎ" , "065": "VEGA/中のひと" , "066": "カジノファイヤーことみちゃん" , "067": "New Lights" , "068": "灼熱くんやきそば" , "069": "即席！脳直★ミュージックシステム" , "070": "キャトられ恋はモ～モク" , "071": "オンリーワンカバー" , "072": "ジザル" , "073": "ジャックティーロ" , "074": "ジャックハンス" , "075": "イェンス" , "076": "アムドゥシアン" , "077": "マクスウェリオン" , "078": "ラプラシア" , "079": "ルシェ" , "080": "スモモ" , "081": "ファウラ" , "082": "ベリゼベス" , "083": "エルピス・キラ" , "084": "フェリーラ" , "085": "オールパトナ" , "086": "あいむちゃん" , "087": "人魚のPrim" , "088": "アヤカシ二人" , "089": "SHELTER OF THE MIND" , "090": "Acid Pumper" , "091": "X" , "092": "ハーティー" , "093": "Nightmare before oversleep" , "094": "Highcharge Divolt" , "095": "Godspeed（少年）" , "096": "車掌イージス" , "097": "GENERATE" , "098": "Dynamite" , "099": "格闘乙女" , "100": "レル DX2300系" , "101": "つゆ太" , "102": "La dolce primavera" , "103": "AO-1" , "104": "真 地獄超特急 -HELL or HELL-" , "105": "モード" , "106": "ミニョンヌ鉄道兄弟" , "107": "冬椿" , "108": "PAPAYAPA BASS" , "109": "鴉" , "110": "AsiaN distractive" , "111": "TOGAKUSHI" , "112": "Modular Technology" , "113": "獅子霞麗ノ舞" , "114": "Music is The Answer" , "115": "!Viva!" , "116": "SINOBUZ UI" , "117": "ChaserXX" , "118": "Amor De Verao" , "119": "エディブルフラワーの独白" , "120": "ハイ*ビスカス ft. Kanae Asaba" , "121": "Midnight Lady" , "122": "FUTURE is Dead" , "123": "Break Stasis" , "124": "草原の王女-軌跡を辿って-" , "125": "25UI" , "126": "焔極OVERKILL" , "127": "Breakin' Chain" , "128": "津軽雪" , "129": "Exhaust Hype" , "130": "Yellow Sketch(RX-Ver.S.P.L.)" , "131": "Steel Edge" , "132": "Go Ahead!!" , "133": "Sky High" , "134": "イザナミノナゲキ" , "135": "GuNGNiR" , "136": "ディッシュウォッシャー◎彡おいわちゃん" , "137": "BroGamer" , "138": "FUZIN RIZIN" , "139": "Mare Nectaris" , "140": "Quakes" , "141": "Rave Cannon" , "142": "ECHIDNA" , "143": "Snakey Kung-fu" , "144": "刃図羅" , "145": "忍恋花" , "146": "法具「バズラ」" , "147": "HADES" , "148": "DEATH†ZIGOQ" , "149": "東京神話" , "150": "Initiation" , "151": "EMERALDAS" , "152": "Chemical Cookie" , "153": "ナイトシティー・アヴァンチュール" , "154": "シムルグの目醒め" , "155": "n'pa pa BBQ" , "156": "ANCHOR" , "157": "IIDX AIR RACE" , "158": "THE DAY OF JUBILATIONS" , "159": "HEISEI" , "160": "IDC feat.REVERBEE (Mo'Cuts Ver)" , "161": "Yum Yum Jelly" , "162": "夏の匂い。キミの残像。 ft. Kanae Asaba" , "163": "Hurry Hurry" , "164": "OVERTIME" , "165": "ミストレス・アンに花束を" , "166": "Ember Lights" , "167": "Rootage" , "168": "Urban Constellations" , "169": "金野火織の金色提言" , "170": "龍王の霊廟(Mausoleum Of The Primal Dragon)" , "171": "Painful Fate" , "172": "Drastic Dramatic" , "173": "抱きしめてモナムール" , "174": "Trill auf G" , "175": "Lethal Weapon" , "176": "HEROIC VERSE" , "177": "Primitive Vibes" , "178": "Calvados Queen" , "179": "Ska-sh All Neurons!!" , "180": "Moving on" , "181": "Hyper Drive feat. ぷにぷに電機" , "182": "THE BRAVE MUST DIE" , "183": "曼荼羅恋々" , "184": "Silly Love" , "185": "Change Yourself" , "186": "Virus Funk" , "187": "涙のテ・エストラーニョ・ムーチョ" , "188": "∀" , "189": "S-Bahn" , "190": "Vitrum" , "191": "水無月の雫" , "192": "Lovely Howdy Cowboy!!" , "193": "WAKE UP NOW" , "194": "魔法のかくれんぼ" , "195": "POLKAMAИIA" , "196": "POLKAMAИIA<2>" , "197": "犬に雨傘" , "198": "Ah Hah Yeah" , "199": "HIGH VOLTAGE" , "200": "IIDX28汎用" , "201": "Chewingood!!!" , "202": "がっつり陰キャ!? 怪盗いいんちょの億劫" , "203": "がっつり陰キャ!? 怪盗いいんちょの億劫<2>" , "204": "魅惑のYUMMYスイーツ" , "205": "度胸兄弟" , "206": "STOIC HYPOTHESIS" , "207": "GHOST" , "208": "GIGA VIOLATE" , "209": "Crank It" , "210": "Horizons of Promise" , "211": "Backyard Stars" , "212": "Smashing Wedge" , "213": "HEROIC VERSE Shutter" , "214": "LIGHTNING MODEL" , "215": "ARENA UI 2.0" , "216": "華麗なる大犬円舞曲" , "217": "召しませ！BISTROVER" , "218": "ピンシェフくん" , "219": "バッド・スイーツ、バッド・ドリーム" , "220": "Sinus Iridum" , "221": "ジェイ君とドゥイさん" , "222": "あまいじかん" , "223": "リフレナ" , "224": "THE PEERLESS UNDER HEAVEN" , "225": "二人ノ廃城幽踊宴" , "226": "乱膳の舞姫" , "227": "ハイテックトキオ" , "228": "月とミルク" , "229": "Ariah" , "230": "LIVE DRIVING!! feat. 花たん" , "231": "Wonderful Escape" , "232": "GiGaGaHell" , "233": "オールトの雲" , "234": "Ventriloquist" , "235": "DREAM OF SPACE UFO ABDUCTION" , "236": "Skreaming for Salvation" , "237": "もにに" , "238": "ピカグレ御守" , "239": "ふるこんぼ御守" , "240": "ANEMONE" , "241": "お肉" , "242": "WHA" , "243": "ABSOLUTE EVIL" , "244": "RAGE feat.H14 of LEONAIR" , "245": "RESIDENT UI" , "246": "B.O.D.Y." , "247": "Shadow World" , "248": "TECHNOPHOBIA" , "249": "Programmed Genom" , "250": "C-C-C-N-N-N" , "251": "儚キ戀ノ幻想譚" , "252": "きゅんです。" , "253": "Summerblue" , "254": "罪過の聖堂" , "255": "CUE CUE RESCUE" , "256": "Sunny Day Vibes" , "257": "No Day But Today!" , "258": "Beyond Evolution" , "259": "AWA AWA" , "260": "BIGWAVERS" , "261": "ONE AND ONLY" , "262": "■□模様" , "263": "ちょえちょえまぎか" , "264": "栄冠のカンパネラ" , "265": "Xerulean" , "266": "STRAIGHT TO THE STARS" , "267": "JUSTICE/GUILTY" , "268": "EPOLIS UI" , "269": "Dahlia" , "270": "シンデレラ" , "271": "れとりば！" , "272": "夢縁" , "273": "SOLAR ECLIPSE" , "274": "Ghost Pulse" , "275": "Iris" , "276": "Get Higher" , "277": "アタシ完全絶対正義ちゃん！" , "278": "INHERITANCE" , "279": "CADENZA" , "280": "Cult Invitation" , "281": "電子になりたい" , "282": "MAXIMUM CHEAT GIRL" , "283": "Out of Control" , "284": "Glitch N Ride" , "285": "惑星鉄道" , "286": "COUNTING SHEEP" , "287": "マイポリスデザイナー" , "288": "Pinky Crush" , "289": "PIT A PAT" , "290": "最強頂戴girl" , "291": "Vibing! Shake it!" , "292": "FERMI PARADOX" , "293": "灼熱 Lost Summer Dayz" , "294": "get set mind" , "295": "Raspberry Potion" , "296": "Secret Rouge" , "297": "u gotta beat" },
+            "I14": { "000": "DEFAULT", "001": "デジタル (DIGITAL)", "002": "スマート (smart)", "003": "メタリックブルー (metallic blue)", "004": "テクノ (techno)ワイヤー (wire)", "005": "ワイヤー (wire)", "006": "ABYSS", "007": "SPADA", "008": "ANCIENT", "009": "オンリーワンジャッジ (only one judge)", "010": "電光掲示板風 (dot matrix)", "011": "SINOBUZ", "012": "セグメント (segment)", "013": "Rootage", "014": "HEROIC VERSE", "015": "BISTROVER JUDGE", "016": "CastHour", "017": "RESIDENT", "018": "EPOLIS", "019": "Pinky Crush" },
             "I15": { "000": "DEFAULT", "001": "細いノーツ (Thin)", "002": "極細ノーツ (Thinner)", "003": "ゴージャス (Gorgeous)", "004": "アクア (Aqua)", "005": "ギャル (Gyaru)", "006": "フォトン (Photon)", "007": "パステル (Pastel)", "008": "シンプルカラー (Simple color)", "009": "ライト (Light)", "010": "tricoro", "011": "バブル (Bubble)" },
             "I16": { "000": "DEFAULT", "001": "IIDX RED", "002": "HAPPY SKY", "003": "DistorteD", "004": "GOLD", "005": "DJ TROOPERS", "006": "EMPRESS", "007": "SIRIUS", "008": "Resort Anthem", "009": "Lincle", "010": "tricoro", "011": "SPADA", "012": "オンリーワンフルコンボ (only one full combo)", "013": "PENDUAL", "014": "copula", "015": "SINOBUZ", "016": "キャノンフィニッシュ (cannon finish)", "017": "Rootage", "018": "HEROIC VERSE" },
-            "I17": { "000": "DEFAULT", "001": "ショート (short)", "002": "ロング (long)", "003": "オレンジ (orange)", "004": "ピンク (pink)", "005": "モノクロ (monochrome)", "006": "ベリーショート (very short)", "007": "ライトニング (lightning)", "008": "オンリーワンビーム (only one beam)", "009": "コピュライト (copula-light)", "010": "CBビーム (CB Beam)", "011": "HEROIC VERSE", "012": "BISTROVER BURNER", "013": "フレネルビーム (Fresnel beam)", "014": "RESIDENT" },
+            "I17": { "000": "DEFAULT", "001": "ショート (short)", "002": "ロング (long)", "003": "オレンジ (orange)", "004": "ピンク (pink)", "005": "モノクロ (monochrome)", "006": "ベリーショート (very short)", "007": "ライトニング (lightning)", "008": "オンリーワンビーム (only one beam)", "009": "コピュライト (copula-light)", "010": "CBビーム (CB Beam)", "011": "HEROIC VERSE", "012": "BISTROVER BURNER", "013": "フレネルビーム (Fresnel beam)", "014": "RESIDENT", "015": "EPOLIS", "016": "Pinky Crush" },
             "I19": { "000": "DEFAULT", "001": "SIRIUS", "002": "Resort Anthem", "003": "Lincle", "004": "tricoro", "005": "SPADA", "006": "PENDUAL (PRESENT)", "007": "PENDUAL (FUTURE)", "008": "copula", "009": "SINOBUZ", "010": "CANNON BALLERS", "011": "IIDXRED", "012": "HAPPY SKY", "013": "DistorteD", "014": "GOLD", "015": "DJ TROOPERS", "016": "EMPRESS", "017": "Rootage", "018": "7th style", "019": "8th style", "020": "9th style", "021": "10th style", "022": "HEORIC VERSE", "023": "BISTROVER", "024": "CastHour", "025": "RESIDENT" },
             "I21": { "000": "DEFAULT", "001": "PREMIUM 1", "002": "PREMIUM 2", "003": "PREMIUM 3", "9999": "ALL BACKGROUNDS" }
         };
@@ -517,15 +516,15 @@ Description:
                 { id: "03", type: "C", prefix: "C12", name: "HCN Colour", count: 2 },
                 { id: "04", type: "C", prefix: "C13", name: "Note Thickness", count: 4 },
                 { id: "05", type: "C", prefix: "C14", name: "Key Beam Length", count: 4 },
-                { id: "02", type: "I", prefix: "I11", name: "Note Explosion", count: 24 },
+                { id: "02", type: "I", prefix: "I11", name: "Note Explosion", count: 26 },
                 { id: "03", type: "I", prefix: "I12", name: "Turntable", count: 22 },
-                { id: "04", type: "I", prefix: "I13", name: "Lane Cover", count: 187 },
-                { id: "05", type: "I", prefix: "I14", name: "Judgement Font", count: 18 },
+                { id: "04", type: "I", prefix: "I13", name: "Lane Cover", count: 298 },
+                { id: "05", type: "I", prefix: "I14", name: "Judgement Font", count: 20 },
                 { id: "06", type: "I", prefix: "I15", name: "Note Skin", count: 12 },
                 { id: "07", type: "I", prefix: "I16", name: "Full Combo Effect", count: 19 },
-                { id: "08", type: "I", prefix: "I17", name: "Key Beam", count: 15 },
+                { id: "08", type: "I", prefix: "I17", name: "Key Beam", count: 17 },
                 { id: "10", type: "I", prefix: "I19", name: "Song Select BGM", count: 26 },
-                { id: "11", type: "I", prefix: "I13", name: "Graph Area", count: 187 }, 
+                { id: "11", type: "I", prefix: "I13", name: "Graph Area", count: 298 }, 
                 { id: "12", type: "I", prefix: "I21", name: "Result Background", count: 4 }
             ]
         };
@@ -533,7 +532,7 @@ Description:
         // --- STATE ---
         const State = {
             profile: { _id: CONFIG.userId, djname: "GUEST", bit: 0 },
-            resources: { bit: 0, ldisc: 0, infinitas_ticket: 0, infinitas_ticket_free: 0 }, 
+            resources: { bit: 0, ldisc: 0, infinitas_ticket: 0, mobile_point: 0, infinitas_ticket_free: 0 }, 
             options: { sp_judge_offset: 0, sp_note_offset: 0, sp_sudden_plus: 250, sp_timing_type: 0, dp_judge_offset: 0, dp_note_offset: 0, dp_sudden_plus: 250, dp_timing_type: 0 },
             scores: [],
             items: {}, 
@@ -628,11 +627,11 @@ Description:
                 // Profile (p2d_profile.json)
                 State.profile = { 
                     "_id": "TOKEN",
-                    "djname": "JOYCIE",
-                    "infinitas_id": "C012345678900",
-                    "sp_dan": 0,
+                    "djname": "IIDX",
+                    "infinitas_id": "C608137201573",
+                    "sp_dan": 10,
                     "dp_dan": 0,
-                    "bit": 50000,
+                    "bit": 9999999,
                     "updated_at": "2025-12-20T10:13:08.161Z"
                 };
 
@@ -646,8 +645,8 @@ Description:
                 // Rivals (p2d_rival_data.json)
                 State.rivals = {
                   "_id": "TOKEN",
-                  "sp_rivals": ["RIVAL_TOKEN"],
-                  "dp_rivals": ["RIVAL_TOKEN"],
+                  "sp_rivals": ["C608137201573"],
+                  "dp_rivals": ["C608137201573"],
                   "settings": { "show_rival_exscore": true, "active": true },
                   "updated_at": "2025-12-19T23:00:00.000Z"
                 };
@@ -655,17 +654,17 @@ Description:
                 // Settings (p2d_customize_setting.json)
                 State.settings = {
                     "_id": "TOKEN",
-                    "items_count": { "ldisc": 0, "infinitas_ticket": 0, "infinitas_ticket_free": 0, "bit": 50000,},
+                    "items_count": { "ldisc": 100, "infinitas_ticket": 0, "infinitas_ticket_free": 0, "bit": 9999999, "mobile_point": 0 },
                     "customize": [
                         { "item_category": 2, "item_id": "I1100000" },
-                        { "item_category": 3, "item_id": "I1200000" },
-                        { "item_category": 4, "item_id": "I1300000" },
-                        { "item_category": 5, "item_id": "I1400000" },
-                        { "item_category": 6, "item_id": "I1500000" },
+                        { "item_category": 3, "item_id": "I1200001" },
+                        { "item_category": 4, "item_id": "I1300164" },
+                        { "item_category": 5, "item_id": "I1400002" },
+                        { "item_category": 6, "item_id": "I1500008" },
                         { "item_category": 7, "item_id": "I1600000" },
-                        { "item_category": 8, "item_id": "I1700000" },
-                        { "item_category": 11, "item_id": "I1300000" },
-                        { "item_category": 10, "item_id": "I1900000" },
+                        { "item_category": 8, "item_id": "I1700005" },
+                        { "item_category": 11, "item_id": "I1300163" },
+                        { "item_category": 10, "item_id": "I1900004" },
                         { "item_category": 12, "item_id": "I2100000" }
                     ],
                     "other_customize": [
@@ -678,21 +677,21 @@ Description:
                 };
                 State.resources = State.settings.items_count;
 
-                // Items (p2d_item.json) - Partial Generation for I11, I12, I13 etc.
+                // Items (p2d_item.json) - Partial Generation
                 const generateItems = (prefix, count) => {
                     for(let i=0; i<count; i++) {
                         const suffix = i.toString().padStart(5, '0');
                         State.items[`${prefix}${suffix}`] = 1;
                     }
                 };
-                generateItems('I11', 5); generateItems('I12', 5); generateItems('I13', 20); // Just a subset
+                generateItems('I11', 24); generateItems('I12', 22); generateItems('I13', 296); // Just a subset for load
 
                 // Music (p2d_music_open.json structure - mock)
                 State.scores = [
                     { music_id: 1001, kind: 0, score: [0,0,2000,0,0], clear_type: 4, difficulty: 2 }
                 ];
                 
-                App.log("Sample Data (IIDX) Loaded");
+                App.log("Sample Data Loaded");
                 Data.updateStatus();
                 App.nav('profile');
             },
@@ -710,7 +709,8 @@ Description:
                            ldisc: parseInt(State.resources.ldisc || 0),
                            infinitas_ticket: parseInt(State.resources.infinitas_ticket || 0),
                            infinitas_ticket_free: parseInt(State.resources.infinitas_ticket_free || 0),
-                           // bit usually in profile, but if user wants it here we can include
+                           mobile_point: parseInt(State.resources.mobile_point || 0),
+                           bit: parseInt(State.resources.bit || 0)
                         },
                         customize: State.settings.customize || [],
                         other_customize: State.settings.other_customize || []
@@ -760,6 +760,7 @@ Description:
                 document.getElementById('prof-ldisc').value = r.ldisc || 0;
                 document.getElementById('prof-tickets').value = r.infinitas_ticket || 0;
                 document.getElementById('prof-tickets-free').value = r.infinitas_ticket_free || 0;
+                document.getElementById('prof-mobile').value = r.mobile_point || 0;
                 
                 ['sp_judge_offset','sp_note_offset','sp_sudden_plus','sp_timing_type',
                  'dp_judge_offset','dp_note_offset','dp_sudden_plus','dp_timing_type'].forEach(k => {
@@ -806,6 +807,7 @@ Description:
                         if(cat.prefix === 'I21' && suffix === '9999') id = 'I2199999';
                         const name = dbCat[suffix];
                         const img = `./public/images/${id}.png`;
+                        const gif = `./public/images/${id}.gif`;
                         
                         // Grid
                         const el = document.createElement('div');
@@ -824,10 +826,20 @@ Description:
                     document.getElementById('custom-count').innerText = "0 items";
                 }
                 
-                // Update Simple Preview
+                // Update Simple Preview (with GIF Support)
                 if(currentEquip) {
-                    document.getElementById('custom-preview-img').src = `./public/images/${currentEquip}.png`;
-                    document.getElementById('custom-preview-img').style.display = 'block';
+                    const imgEl = document.getElementById('custom-preview-img');
+                    imgEl.style.display = 'block';
+                    
+                    // Try loading GIF first
+                    const gifPath = `./public/images/${currentEquip}.gif`;
+                    const pngPath = `./public/images/${currentEquip}.png`;
+                    
+                    imgEl.onerror = () => {
+                        // Fallback to PNG if GIF fails or doesn't exist
+                        if(imgEl.src.endsWith('.gif')) imgEl.src = pngPath; 
+                    };
+                    imgEl.src = gifPath;
                     
                     let equipName = currentEquip;
                     if(dbCat) {
@@ -844,11 +856,12 @@ Description:
                 const targetArray = isOther ? State.settings.other_customize : State.settings.customize;
                 
                 // Filter out existing entry for this category
-                const filtered = targetArray.filter(x => x.item_category != parseInt(cat.id));
-                filtered.push({ item_category: parseInt(cat.id), item_id: itemId });
+                // Careful: using 'let' to reassign filtered array
+                let newArr = targetArray.filter(x => x.item_category != parseInt(cat.id));
+                newArr.push({ item_category: parseInt(cat.id), item_id: itemId });
                 
-                if(isOther) State.settings.other_customize = filtered;
-                else State.settings.customize = filtered;
+                if(isOther) State.settings.other_customize = newArr;
+                else State.settings.customize = newArr;
 
                 Custom.render();
             },
